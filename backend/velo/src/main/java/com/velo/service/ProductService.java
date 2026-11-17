@@ -10,5 +10,6 @@ public interface ProductService {
     ProductEntity createProduct(ProductEntity productEntity);
     List<ProductEntity> findAllProduct();
     List<ProductEntity> findAllByBrand(String Brand);
+    ProductEntity findById(long id);
 
 }

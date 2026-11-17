@@ -7,7 +7,8 @@ import java.util.List;
 public interface AccountService {
     List<AccountEntity> getAllAccounts();
 
-    AccountEntity register(AccountEntity registration);
+    AccountEntity register(AccountEntity regisAccount);
 
-    AccountEntity login(AccountEntity credentials);
+    AccountEntity login(AccountEntity loginAccount);
+
 }
