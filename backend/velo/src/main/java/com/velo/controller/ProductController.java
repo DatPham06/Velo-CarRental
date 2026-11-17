@@ -26,4 +26,9 @@ public class ProductController {
          return productService.createProduct(product);
      }
 
+     @GetMapping("/getbyid/{id}")
+    public ProductEntity getProductById(@PathVariable long id){
+        return productService.findById(id);
+     }
+
 }

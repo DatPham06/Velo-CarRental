@@ -29,5 +29,9 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findAllByBrand(Brand);
     }
 
+    @Override
+    public ProductEntity findById(long id) {
+        return productRepository.findById(id);
+    }
 
 }
