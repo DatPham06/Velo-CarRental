@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowDown, ArrowRight, ArrowUp, ArrowUpRight, CalendarDays, CarFront, ChevronDown,
-  CircleCheck, Fuel, KeyRound, MapPin, Search, Settings2, UsersRound,
+  CircleCheck, Fuel, KeyRound, MapPin, Search, Settings2, UserRound, UsersRound,
 } from 'lucide-react';
 import '@fontsource/be-vietnam-pro/400.css';
 import '@fontsource/be-vietnam-pro/500.css';
@@ -10,6 +10,8 @@ import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
 import '@fontsource/be-vietnam-pro/800.css';
 import BookingDialog from './BookingDialog.jsx';
+import AccountPage from './AccountPage.jsx';
+import Brand from './Brand.jsx';
 import { categories, fleet, locations } from './fleet.js';
 import { addDays, dateKey, formatPrice, isCarAvailable, rentalDays } from './rental.js';
 import './styles.css';
@@ -19,15 +21,6 @@ const steps = [
   { icon: CalendarDays, title: 'Chốt lịch', detail: 'Xem thông tin xe và tổng chi phí dự kiến theo số ngày thuê.' },
   { icon: KeyRound, title: 'Xác nhận', detail: 'Hoàn tất đặt thử và nhận mã đặt xe ngay trên màn hình.' },
 ];
-
-function Brand() {
-  return (
-    <a className="brand" href="#top" aria-label="Velo, trang chủ">
-      <span className="brand-mark"><CarFront size={20} strokeWidth={2.25} aria-hidden="true" /></span>
-      <span>velo<span className="brand-dot">.</span></span>
-    </a>
-  );
-}
 
 function CarCard({ car, onSelect }) {
   return (
@@ -123,9 +116,14 @@ function App() {
             <a href="#fleet" className="nav-primary">Đội xe</a>
             <a href="#how">Cách thuê xe</a>
           </nav>
-          <a className="button button-outline header-action" href="#fleet">
-            Khám phá xe <ArrowUpRight size={16} aria-hidden="true" />
-          </a>
+          <div className="header-actions">
+            <a className="button button-outline header-account" href="/account" aria-label="Tài khoản">
+              <UserRound size={17} aria-hidden="true" /> <span>Tài khoản</span>
+            </a>
+            <a className="button button-outline header-action" href="#fleet">
+              Khám phá xe <ArrowUpRight size={16} aria-hidden="true" />
+            </a>
+          </div>
         </div>
       </header>
 
@@ -265,4 +263,5 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+const isAccountPage = /^\/account\/?$/.test(window.location.pathname);
+createRoot(document.getElementById('root')).render(isAccountPage ? <AccountPage /> : <App />);

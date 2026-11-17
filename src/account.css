@@ -1,0 +1,213 @@
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.header-account {
+  min-height: 44px;
+  padding-inline: 13px;
+}
+
+.account-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--pine);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account-back:hover { background: #edf2e7; }
+
+.account-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .89fr) minmax(0, 1.11fr);
+  gap: 12px;
+  width: min(1200px, calc(100% - 96px));
+  margin: 12px auto 46px;
+  padding: 12px;
+  border: 1px solid #e7ecdd;
+  border-radius: 34px;
+  background: var(--white);
+  box-shadow: 0 18px 44px #243e2110;
+}
+
+.account-panel {
+  align-self: center;
+  min-width: 0;
+  padding: clamp(24px, 4.1vw, 58px);
+}
+
+.account-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 27px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f2f5ec;
+}
+
+.account-switch button {
+  min-height: 42px;
+  padding: 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.account-switch button[aria-pressed="true"] {
+  border-color: #dce8cd;
+  background: var(--accent);
+  color: var(--pine);
+}
+
+.account-switch button:enabled:hover { color: var(--ink); }
+.account-switch button:disabled { cursor: wait; }
+
+.account-heading h1, .account-confirmed h1 {
+  color: var(--ink);
+  font-size: clamp(29px, 3vw, 44px);
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -.055em;
+}
+
+.account-heading p, .account-confirmed p {
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.account-form { margin-top: 23px; }
+.account-form fieldset { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.account-field { display: grid; gap: 6px; color: var(--ink); font-size: 13px; font-weight: 600; }
+.account-field small { color: var(--muted); font-size: 12px; font-weight: 400; }
+
+.account-field input {
+  width: 100%;
+  min-height: 46px;
+  min-width: 0;
+  padding: 9px 14px;
+  border: 1px solid #dce4d8;
+  border-radius: 12px;
+  background: #fdfdf8;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.account-field input::placeholder { color: #677769; font-size: 14px; font-weight: 400; }
+.account-field input:focus-visible { outline-offset: 1px; }
+.account-password { position: relative; }
+.account-password input { padding-right: 50px; }
+
+.account-password button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 38px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pine);
+}
+
+.account-password button:enabled:hover { background: #eaf1e3; }
+.account-submit { width: 100%; min-height: 48px; margin-top: 3px; }
+.account-submit:disabled { opacity: .7; cursor: wait; }
+.account-feedback { padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.5; }
+.account-feedback-error { background: #f9ece8; color: #822e28; }
+.account-feedback-success { background: #edf3e5; color: var(--pine); }
+.account-confirmed h1:focus { outline: none; }
+.account-confirmed .button { margin-top: 24px; }
+
+.account-success-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--pine);
+}
+
+.account-visual {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: end;
+  min-height: 535px;
+  border-radius: 60px 23px 23px 23px;
+  background: var(--pine);
+}
+
+.account-visual img, .account-visual::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+}
+
+.account-visual img { object-fit: cover; object-position: 87% center; }
+.account-visual::after { content: ""; background: linear-gradient(transparent 64%, #101f14b8); }
+
+.account-visual-footer {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 19px;
+  color: var(--white);
+}
+
+.account-visual-footer span, .account-visual-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #f8fcf05e;
+  border-radius: 999px;
+  background: #1e3429e0;
+}
+
+.account-visual-footer span { padding: 8px 12px; font-size: 11px; font-weight: 600; }
+.account-visual-footer a { justify-content: center; width: 44px; height: 44px; }
+.account-visual-footer a:hover { background: var(--pine); }
+
+@media (max-width: 1050px) {
+  .account-layout { width: calc(100% - 58px); }
+  .account-visual { min-height: 455px; }
+}
+
+@media (max-width: 750px) {
+  .account-layout { grid-template-columns: minmax(0, 1fr); }
+  .account-visual { min-height: 0; aspect-ratio: 1.75; border-radius: 36px 17px 17px; }
+}
+
+@media (max-width: 650px) {
+  .header-account { min-height: 39px; width: 39px; padding: 0; }
+  .header-account span { display: none; }
+  .account-layout { width: calc(100% - 32px); margin-top: 5px; padding: 7px; border-radius: 22px; }
+  .account-panel { padding: 19px 13px 22px; }
+  .account-switch { margin-bottom: 20px; }
+  .account-visual-footer { padding: 10px; }
+  .account-visual-footer a { width: 39px; height: 39px; }
+}
