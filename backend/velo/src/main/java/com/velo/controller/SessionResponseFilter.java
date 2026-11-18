@@ -14,7 +14,7 @@ public class SessionResponseFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return !path.startsWith("/account/") && !path.startsWith("/order/");
+        return !path.startsWith("/account/") && !path.startsWith("/order/") && !path.startsWith("/product/");
     }
 
     @Override

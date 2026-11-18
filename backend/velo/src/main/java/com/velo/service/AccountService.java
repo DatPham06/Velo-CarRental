@@ -11,4 +11,6 @@ public interface AccountService {
 
     AccountEntity login(AccountEntity loginAccount);
 
+    AccountEntity setBanned(long id, boolean banned);
+
 }

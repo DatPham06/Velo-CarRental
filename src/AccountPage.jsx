@@ -1,10 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, CircleCheck, Eye, EyeOff, MapPin } from 'lucide-react';
+import {
+  ArrowLeft, ArrowRight, ArrowUpRight, CarFront, ChevronRight, ClipboardList, Eye,
+  EyeOff, LogOut, Mail, MapPin, Phone, UserRound, Users,
+} from 'lucide-react';
 import Brand from './Brand.jsx';
 import { submitAccount } from './accountApi.js';
 import { useAccount, roleLabel } from './accountSession.js';
 import { requestApi } from './api.js';
 import './account.css';
+
+function AccountProfile({ account, headingRef, busy, error, onLogout }) {
+  const name = account.fullName?.trim();
+  const names = name ? name.split(/\s+/) : [];
+  const initials = (names.length > 1 ? [names[0], names.at(-1)] : names)
+    .map((part) => [...part][0]).join('').toLocaleUpperCase('vi-VN');
+  const links = account.role === 'ADMIN' ? [
+    { href: '/admin/orders', label: 'Quản lý đơn thuê', icon: ClipboardList },
+    { href: '/admin/cars', label: 'Quản lý xe', icon: CarFront },
+    { href: '/admin/accounts', label: 'Quản lý tài khoản', icon: Users },
+  ] : [
+    { href: '/orders', label: 'Lịch sử đơn thuê', icon: ClipboardList },
+    { href: '/#fleet', label: 'Thuê xe', icon: CarFront },
+  ];
+
+  return (
+    <>
+      <div className="account-profile-heading">
+        <h1 id="account-title" ref={headingRef} tabIndex={-1}>Tài khoản của tôi</h1>
+        <button className="button button-outline account-logout" type="button" disabled={busy} onClick={onLogout}>
+          <LogOut size={17} aria-hidden="true" /> {busy ? 'Đang đăng xuất…' : 'Đăng xuất'}
+        </button>
+      </div>
+      {error && <p className="account-feedback account-feedback-error account-profile-feedback" role="alert">{error}</p>}
+
+      <div className="account-cover">
+        <img className="account-cover-image" src="/images/mountain-drive.jpg" alt="" />
+        <span className="account-avatar" aria-hidden="true">{initials || <UserRound size={26} />}</span>
+        <div className="account-identity">
+          <p className="account-display-name">{name || account.email}</p>
+          <span className="account-role">{roleLabel(account.role)}</span>
+        </div>
+      </div>
+
+      <div className="account-profile-grid">
+        <section className="account-card" aria-labelledby="account-contact-title">
+          <h2 id="account-contact-title">Thông tin liên hệ</h2>
+          <dl className="account-details">
+            <div>
+              <dt><Mail size={18} aria-hidden="true" /> Email</dt>
+              <dd>{account.email}</dd>
+            </div>
+            <div>
+              <dt><Phone size={18} aria-hidden="true" /> Số điện thoại</dt>
+              <dd>{account.phone?.trim() || 'Chưa cập nhật'}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <nav className="account-card" aria-labelledby="account-actions-title">
+          <h2 id="account-actions-title">Truy cập nhanh</h2>
+          <div className="account-actions">
+            {links.map(({ href, label, icon: Icon }) => (
+              <a className="account-action-link" key={href} href={href}>
+                <span className="account-action-icon"><Icon size={19} aria-hidden="true" /></span>
+                <span>{label}</span>
+                <ChevronRight size={17} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        </nav>
+      </div>
+    </>
+  );
+}
 
 export default function AccountPage() {
   const [mode, setMode] = useState('login');
@@ -19,8 +87,8 @@ export default function AccountPage() {
   const title = isRegister ? 'Tạo tài khoản' : 'Đăng nhập';
 
   useEffect(() => {
-    document.title = `${title} · Velo`;
-    if (account) headingRef.current?.focus();
+    document.title = `${account ? 'Tài khoản của tôi' : title} · Velo`;
+    if (account) headingRef.current?.focus({ preventScroll: true });
   }, [account, title]);
 
   function switchMode(nextMode) {
@@ -61,7 +129,7 @@ export default function AccountPage() {
         setFeedback({ type: 'success', text: 'Đã tạo tài khoản. Đăng nhập để tiếp tục.' });
       } else {
         setAccount(result);
-        if (['/orders', '/admin/orders', '/rent'].includes(next) || /^\/payment\/[1-9]\d*$/.test(next)) {
+        if (['/orders', '/admin/orders', '/admin/cars', '/admin/accounts', '/rent'].includes(next) || /^\/payment\/[1-9]\d*$/.test(next)) {
           window.location.assign(next);
         }
       }
@@ -89,29 +157,23 @@ export default function AccountPage() {
   return (
     <>
       <a className="skip-link" href="#account-main">Đến nội dung chính</a>
-      <header className="container header-content">
+      <header className={`container header-content${account ? ' account-dashboard-header' : ''}`}>
         <Brand href="/" />
         <a className="account-back" href="/"><ArrowLeft size={17} aria-hidden="true" /> Trang chủ</a>
       </header>
 
-      <main className="container account-layout" id="account-main">
-        <section className="account-panel" aria-labelledby="account-title">
+      <main className={`container ${account ? 'account-dashboard' : 'account-layout'}`} id="account-main">
+        <section className={account ? 'account-profile' : 'account-panel'} aria-labelledby="account-title">
           {loading ? <p role="status">Đang kiểm tra tài khoản…</p> : sessionError ? (
             <div><p role="alert">{sessionError}</p><button className="button button-outline" onClick={retry}>Thử lại</button></div>
           ) : account ? (
-            <div className="account-confirmed">
-              <div className="account-success-icon"><CircleCheck size={28} aria-hidden="true" /></div>
-              <h1 id="account-title" ref={headingRef} tabIndex={-1}>Đăng nhập thành công</h1>
-              <p>Chào {account.fullName || account.email}. Velo đã xác nhận thông tin tài khoản.</p>
-              <p className="account-role">{roleLabel(account.role)}</p>
-              <div className="account-success-actions">
-                {account.role === 'ADMIN' && <a className="button button-primary" href="/admin/orders">Quản lý đơn thuê</a>}
-                <a className="button button-outline" href="/orders">Đơn thuê của tôi</a>
-                <a className="button button-primary" href="/rent">Thuê xe <ArrowRight size={17} aria-hidden="true" /></a>
-                <button className="button button-outline" type="button" disabled={busy} onClick={logout}>Đăng xuất</button>
-              </div>
-              {feedback?.type === 'error' && <p role="alert">{feedback.text}</p>}
-            </div>
+            <AccountProfile
+              account={account}
+              headingRef={headingRef}
+              busy={busy}
+              error={feedback?.type === 'error' ? feedback.text : ''}
+              onLogout={logout}
+            />
           ) : (
             <>
               <div className="account-switch" role="group" aria-label="Thao tác tài khoản">
@@ -188,13 +250,15 @@ export default function AccountPage() {
           )}
         </section>
 
-        <aside className="account-visual" aria-label="Khám phá Velo">
-          <img src="/images/mountain-drive.jpg" alt="Xe tự lái trên đường đèo miền Bắc" fetchPriority="high" />
-          <div className="account-visual-footer">
-            <span><MapPin size={16} aria-hidden="true" /> Đường đèo miền Bắc</span>
-            <a href="/#fleet" aria-label="Khám phá đội xe"><ArrowUpRight size={20} aria-hidden="true" /></a>
-          </div>
-        </aside>
+        {!account && (
+          <aside className="account-visual" aria-label="Khám phá Velo">
+            <img src="/images/mountain-drive.jpg" alt="Xe tự lái trên đường đèo miền Bắc" fetchPriority="high" />
+            <div className="account-visual-footer">
+              <span><MapPin size={16} aria-hidden="true" /> Đường đèo miền Bắc</span>
+              <a href="/#fleet" aria-label="Khám phá đội xe"><ArrowUpRight size={20} aria-hidden="true" /></a>
+            </div>
+          </aside>
+        )}
       </main>
     </>
   );

@@ -39,6 +39,9 @@ public class AccountEntity {
     @Column(name = "Role")
     private String role = "USER";
 
+    @Column(name = "Banned", nullable = false, columnDefinition = "boolean default false")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private boolean banned;
 
     @OneToMany(mappedBy = "account")
     @JsonIgnore
@@ -90,6 +93,14 @@ public class AccountEntity {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public String getRole() {
         return role;
+    }
+
+    public boolean isBanned() {
+        return banned;
+    }
+
+    public void setBanned(boolean banned) {
+        this.banned = banned;
     }
 
     public List<OrderEntity> getOrders() {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowDown, ArrowRight, ArrowUp, ArrowUpRight, CalendarDays, CarFront,
-  Check, CircleCheck, ClipboardList, KeyRound, MapPin, RefreshCw, Search, ShoppingBag, UserRound,
+  Check, ClipboardList, KeyRound, MapPin, RefreshCw, Search, ShoppingBag, UserRound,
 } from 'lucide-react';
 import '@fontsource/be-vietnam-pro/400.css';
 import '@fontsource/be-vietnam-pro/500.css';
@@ -13,6 +13,8 @@ import AccountPage from './AccountPage.jsx';
 import RentalPage from './RentalPage.jsx';
 import OrdersPage from './OrdersPage.jsx';
 import PaymentPage from './PaymentPage.jsx';
+import AdminCarsPage from './AdminCarsPage.jsx';
+import AdminAccountsPage from './AdminAccountsPage.jsx';
 import { useAccount } from './accountSession.js';
 import Brand from './Brand.jsx';
 import CarImage from './CarImage.jsx';
@@ -240,8 +242,8 @@ function App() {
               <p>Chọn một hoặc nhiều xe, sau đó bấm Thuê xe để xem tổng chi phí.</p>
             </div>
             <span className="results-count" role="status">
-              <CircleCheck size={16} aria-hidden="true" />
-              {availableCars.length} xe trong danh sách
+              <ShoppingBag size={16} aria-hidden="true" />
+              Đã chọn {carIds.length} xe
             </span>
           </div>
 
@@ -330,6 +332,8 @@ if (/^\/account\/?$/.test(window.location.pathname)) page = <AccountPage />;
 if (/^\/rent\/?$/.test(window.location.pathname)) page = <RentalPage />;
 if (/^\/orders\/?$/.test(window.location.pathname)) page = <OrdersPage />;
 if (/^\/admin\/orders\/?$/.test(window.location.pathname)) page = <OrdersPage admin />;
+if (/^\/admin\/cars\/?$/.test(window.location.pathname)) page = <AdminCarsPage />;
+if (/^\/admin\/accounts\/?$/.test(window.location.pathname)) page = <AdminAccountsPage />;
 window.addEventListener('pageshow', event => {
   if (event.persisted) window.location.reload();
 });

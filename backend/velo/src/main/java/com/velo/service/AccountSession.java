@@ -32,7 +32,13 @@ public class AccountSession {
         if (session == null || !(session.getAttribute(ACCOUNT_ID) instanceof Long id)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
-        return accounts.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        AccountEntity account = accounts.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        if (account.isBanned()) {
+            signOut(request);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tài khoản đã bị cấm.");
+        }
+        return account;
     }
 
     public void requireAdmin(HttpServletRequest request) {

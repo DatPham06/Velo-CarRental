@@ -14,6 +14,9 @@ export async function submitAccount(operation, data) {
   if (operation === 'login' && response.status === 401) {
     throw new Error('Email hoặc mật khẩu chưa đúng.');
   }
+  if (operation === 'login' && response.status === 403) {
+    throw new Error('Tài khoản đã bị cấm. Vui lòng liên hệ quản trị viên.');
+  }
   if (operation === 'register' && response.status === 409) {
     throw new Error('Email này đã được đăng ký.');
   }
@@ -29,5 +32,5 @@ export async function submitAccount(operation, data) {
     throw new Error('Máy chủ trả về dữ liệu tài khoản không hợp lệ.');
   }
 
-  return { id: account.id, fullName: account.fullName, email: account.email, role: account.role };
+  return { id: account.id, fullName: account.fullName, email: account.email, phone: account.phone, role: account.role };
 }

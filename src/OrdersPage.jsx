@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import Brand from './Brand.jsx';
 import CarImage from './CarImage.jsx';
+import { AdminNav } from './AdminLayout.jsx';
 import { requestApi } from './api.js';
 import { formatPrice } from './rental.js';
 import './orders.css';
@@ -142,6 +143,7 @@ export default function OrdersPage({ admin = false }) {
           <div><h1>{title}</h1><p>{admin ? 'Xác nhận yêu cầu, bàn giao xe và ghi nhận xe đã trả.' : 'Theo dõi lịch nhận, trả xe và tiến trình từng đơn thuê.'}</p></div>
           {!admin && <a className="button button-primary" href="/#fleet">Thuê thêm xe <ArrowRight size={16} aria-hidden="true" /></a>}
         </header>
+        {admin && <AdminNav active="orders" />}
         {!accessDenied && (
           <div className="orders-toolbar">
             <label><ListFilter size={17} aria-hidden="true" /><span className="orders-filter-label">Trạng thái</span>
