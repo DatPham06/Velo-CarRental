@@ -3,6 +3,7 @@ package com.velo.entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.velo.entity.user.AccountEntity;
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -30,7 +31,7 @@ public class OrderEntity {
     @Column(name = "ExpireDate", nullable = false)
     private Date expireDate;
 
-    @Column(name = "ReturnDate", nullable = false)
+    @Column(name = "ReturnDate")
     private Date returnDate;
 
     @Column(name = "status", nullable = false)
@@ -45,6 +46,7 @@ public class OrderEntity {
     private AccountEntity account;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.PERSIST)
+    @BatchSize(size = 10)
     private List<OrderDetailEntity> orderDetails = new ArrayList<>();
 
     public OrderEntity(Long id, BigDecimal lateFeePerDay, Date startDate, Date expireDate, Date returnDate, String status, BigDecimal totalPrice) {

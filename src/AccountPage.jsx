@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, CircleCheck, Eye, EyeOff, MapPin } from 'lucide-react';
 import Brand from './Brand.jsx';
 import { submitAccount } from './accountApi.js';
+import { useAccount, roleLabel } from './accountSession.js';
+import { requestApi } from './api.js';
 import './account.css';
 
 export default function AccountPage() {
@@ -10,7 +12,8 @@ export default function AccountPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState(null);
-  const [account, setAccount] = useState(null);
+  const { account, setAccount, loading, error: sessionError, retry } = useAccount();
+  const next = new URLSearchParams(window.location.search).get('next');
   const headingRef = useRef(null);
   const isRegister = mode === 'register';
   const title = isRegister ? 'Tạo tài khoản' : 'Đăng nhập';
@@ -58,7 +61,24 @@ export default function AccountPage() {
         setFeedback({ type: 'success', text: 'Đã tạo tài khoản. Đăng nhập để tiếp tục.' });
       } else {
         setAccount(result);
+        if (['/orders', '/admin/orders', '/rent'].includes(next) || /^\/payment\/[1-9]\d*$/.test(next)) {
+          window.location.assign(next);
+        }
       }
+    } catch (error) {
+      setFeedback({ type: 'error', text: error.message });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function logout() {
+    setBusy(true);
+    setFeedback(null);
+    try {
+      await requestApi('/account/logout', { method: 'POST' });
+      setAccount(null);
+      setShowPassword(false);
     } catch (error) {
       setFeedback({ type: 'error', text: error.message });
     } finally {
@@ -76,12 +96,21 @@ export default function AccountPage() {
 
       <main className="container account-layout" id="account-main">
         <section className="account-panel" aria-labelledby="account-title">
-          {account ? (
+          {loading ? <p role="status">Đang kiểm tra tài khoản…</p> : sessionError ? (
+            <div><p role="alert">{sessionError}</p><button className="button button-outline" onClick={retry}>Thử lại</button></div>
+          ) : account ? (
             <div className="account-confirmed">
               <div className="account-success-icon"><CircleCheck size={28} aria-hidden="true" /></div>
               <h1 id="account-title" ref={headingRef} tabIndex={-1}>Đăng nhập thành công</h1>
               <p>Chào {account.fullName || account.email}. Velo đã xác nhận thông tin tài khoản.</p>
-              <a className="button button-primary" href="/#fleet">Khám phá xe <ArrowRight size={17} aria-hidden="true" /></a>
+              <p className="account-role">{roleLabel(account.role)}</p>
+              <div className="account-success-actions">
+                {account.role === 'ADMIN' && <a className="button button-primary" href="/admin/orders">Quản lý đơn thuê</a>}
+                <a className="button button-outline" href="/orders">Đơn thuê của tôi</a>
+                <a className="button button-primary" href="/rent">Thuê xe <ArrowRight size={17} aria-hidden="true" /></a>
+                <button className="button button-outline" type="button" disabled={busy} onClick={logout}>Đăng xuất</button>
+              </div>
+              {feedback?.type === 'error' && <p role="alert">{feedback.text}</p>}
             </div>
           ) : (
             <>

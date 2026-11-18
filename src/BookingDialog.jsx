@@ -155,6 +155,7 @@ export default function BookingDialog({ car, selection, onClose }) {
                 Xác nhận thuê thử <ArrowRight size={18} aria-hidden="true" />
               </button>
               <p className="booking-note">Đặt xe mô phỏng · Không phát sinh thanh toán</p>
+              <a className="button button-outline" href="/rent">Thuê xe từ danh sách hiện có <ArrowRight size={16} aria-hidden="true" /></a>
             </form>
           </>
         )}

@@ -3,7 +3,7 @@ export async function submitAccount(operation, data) {
   try {
     response = await fetch(`/api/account/${operation}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Velo-Request': '1' },
       body: JSON.stringify(data),
       signal: AbortSignal.timeout(10_000),
     });
@@ -29,5 +29,5 @@ export async function submitAccount(operation, data) {
     throw new Error('Máy chủ trả về dữ liệu tài khoản không hợp lệ.');
   }
 
-  return { fullName: account.fullName, email: account.email };
+  return { id: account.id, fullName: account.fullName, email: account.email, role: account.role };
 }

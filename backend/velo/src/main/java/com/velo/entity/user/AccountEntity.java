@@ -1,6 +1,7 @@
 package com.velo.entity.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.velo.entity.OrderEntity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicInsert;
@@ -17,6 +18,7 @@ import java.util.Locale;
 public class AccountEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
     @Column(name = "FullName", length = 255, nullable = false)
@@ -33,6 +35,10 @@ public class AccountEntity {
 
     @Column(name = "Phone")
     private String phone;
+
+    @Column(name = "Role")
+    private String role = "USER";
+
 
     @OneToMany(mappedBy = "account")
     @JsonIgnore
@@ -72,12 +78,18 @@ public class AccountEntity {
         this.email = email == null ? null : email.toLowerCase(Locale.ROOT);
     }
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPassword() {
         return password;
     }
 
     public String getPhone() {
         return phone;
+    }
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    public String getRole() {
+        return role;
     }
 
     public List<OrderEntity> getOrders() {

@@ -135,6 +135,9 @@
 .account-feedback-success { background: #edf3e5; color: var(--pine); }
 .account-confirmed h1:focus { outline: none; }
 .account-confirmed .button { margin-top: 24px; }
+.account-success-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 23px; }
+.account-confirmed .account-success-actions .button { margin-top: 0; }
+.account-confirmed .account-role { display: inline-block; margin-top: 15px; padding: 5px 12px; border-radius: 999px; background: #eaf1df; color: var(--pine); font-size: 12px; }
 
 .account-success-icon {
   display: grid;

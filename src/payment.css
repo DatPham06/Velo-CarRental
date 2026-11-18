@@ -1,0 +1,34 @@
+.payment-page { max-width: 1060px; padding-block: 23px 64px; }
+.payment-page h1 { margin-bottom: 24px; font-size: clamp(32px, 4vw, 52px); line-height: 1.15; letter-spacing: -.06em; }
+.payment-layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: start; gap: 22px; }
+.payment-panel fieldset { padding: 0; margin: 0; min-width: 0; border: 0; }
+.payment-panel legend { padding: 0; margin-bottom: 18px; font-size: 20px; font-weight: 700; letter-spacing: -.04em; }
+.payment-option { display: grid; grid-template-columns: auto 1fr auto; gap: 13px; align-items: center; margin-top: 9px; padding: 16px; border: 1px solid var(--line); border-radius: 15px; cursor: pointer; }
+.payment-option > svg { color: var(--pine); }
+.payment-option[data-selected="true"] { border-color: #719466; background: #f1f6e8; }
+.payment-option:focus-within { outline: 2px solid #567854; outline-offset: 2px; }
+.payment-option input { width: 18px; height: 18px; accent-color: var(--pine); }
+.payment-option strong, .payment-cars strong { display: block; font-size: 14px; }
+.payment-option small, .payment-cars small, .payment-fine-print { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.payment-submit { margin-top: 21px; }
+.payment-submit:disabled { opacity: .55; cursor: default; }
+.payment-note { padding: 13px 15px; margin-top: 15px; border-radius: 13px; background: #f0f4e8; color: var(--pine); font-size: 13px; line-height: 1.7; }
+.payment-saved, .payment-dates, .payment-cars li { display: flex; align-items: center; gap: 10px; }
+.payment-saved { flex-wrap: wrap; justify-content: space-between; font-size: 14px; }
+.payment-saved span { padding: 6px 10px; border-radius: 99px; background: #ebefdf; color: var(--pine); font-size: 12px; }
+.payment-transfer { margin-top: 17px; padding: 16px; background: #f3f6ec; border-radius: 14px; }
+.payment-transfer h3 { font-size: 16px; }
+.payment-transfer dl { margin: 10px 0 0; }
+.payment-transfer dl > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px 14px; padding-block: 7px; font-size: 13px; }
+.payment-transfer dt, .payment-dates { color: var(--muted); }
+.payment-transfer dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.payment-dates { font-size: 13px; }
+.payment-cars { display: grid; gap: 12px; margin: 18px 0; padding: 0; list-style: none; }
+.payment-cars strong { overflow-wrap: anywhere; }
+.payment-car-photo { flex: 0 0 72px; height: 49px; overflow: hidden; border-radius: 9px; background: #e9ece8; }
+.payment-car-photo img { width: 100%; height: 100%; object-fit: cover; }
+.payment-state { display: grid; justify-items: start; gap: 15px; }
+@media (max-width: 760px) {
+  .payment-layout { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .payment-submit { width: 100%; }
+}
