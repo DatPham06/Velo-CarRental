@@ -26,6 +26,9 @@ public class ProductEntity {
     @Column(name = "IMG")
     private String IMG;
 
+    @Column(name = "Status")
+    private String status;
+
     public ProductEntity(Long id, String productName, BigDecimal pricePerDay, String brand, String IMG) {
         this.id = id;
         this.productName = productName;
@@ -58,5 +61,11 @@ public class ProductEntity {
         return IMG;
     }
 
+    public String getStatus() {
+        return status;
+    }
 
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }

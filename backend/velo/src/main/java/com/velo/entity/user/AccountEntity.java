@@ -1,6 +1,6 @@
 package com.velo.entity.user;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.velo.entity.OrderEntity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.DynamicInsert;
@@ -22,6 +22,9 @@ public class AccountEntity {
     @Column(name = "FullName", length = 255, nullable = false)
     private String fullName;
 
+    @Column(name = "UserName")
+    private String userName;
+
     @Column(name = "Email", length = 255, nullable = false, unique = true)
     private String email;
 
@@ -32,7 +35,8 @@ public class AccountEntity {
     private String phone;
 
     @OneToMany(mappedBy = "account")
-    private List<OrderEntity> Orders =  new ArrayList<>();
+    @JsonIgnore
+    private List<OrderEntity> orders = new ArrayList<>();
 
     protected AccountEntity() {
     }
@@ -52,6 +56,14 @@ public class AccountEntity {
         return fullName;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -66,5 +78,9 @@ public class AccountEntity {
 
     public String getPhone() {
         return phone;
+    }
+
+    public List<OrderEntity> getOrders() {
+        return orders;
     }
 }
