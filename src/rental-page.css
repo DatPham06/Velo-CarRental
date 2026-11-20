@@ -13,6 +13,49 @@
 .rental-panel h2 svg { color: #5b8158; }
 .rental-date-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
 .rental-date-fields .account-field input { background: #f4f6ee; font-size: 14px; }
+.rental-delivery-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.rental-delivery-option {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--white);
+  cursor: pointer;
+}
+.rental-delivery-option:has(input:checked) { border-color: #8cab80; background: #eff4e7; }
+.rental-delivery-option input { flex: none; margin: 2px 0 0; accent-color: var(--pine); }
+.rental-delivery-option strong { display: block; font-size: 13px; }
+.rental-delivery-option small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.rental-delivery-address { grid-column: 1 / -1; margin-top: 6px; }
+.rental-delivery-address textarea {
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid #dce4d8;
+  border-radius: 12px;
+  background: #fdfdf8;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.rental-delivery-address textarea:focus-visible { outline: 2px solid #567854; outline-offset: 1px; }
+.rental-promotion, .rental-applied-promotion { display: flex; align-items: center; gap: 10px; }
+.rental-promotion .account-field { flex: 1; min-width: 0; }
+.rental-promotion button:disabled { opacity: .55; cursor: default; }
+.rental-applied-promotion { justify-content: space-between; margin-top: 10px; color: var(--pine); font-size: 13px; font-weight: 600; }
+.rental-applied-promotion button { margin-top: 0; }
 .rental-selected-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
 .rental-selected-heading h2 { margin-bottom: 0; }
 .rental-selected-heading a { color: var(--pine); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
@@ -52,6 +95,11 @@
 .rental-estimate strong { color: var(--pine); }
 .rental-grand-total { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 9px; margin-top: 21px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; }
 .rental-grand-total strong { color: var(--pine); font-size: 23px; letter-spacing: -.04em; }
+.rental-cost-breakdown { display: grid; gap: 8px; margin: 16px 0 0; font-size: 13px; }
+.rental-cost-breakdown > div { display: flex; justify-content: space-between; gap: 10px; }
+.rental-cost-breakdown dt { color: var(--muted); overflow-wrap: anywhere; }
+.rental-cost-breakdown dd { flex: none; margin: 0; color: var(--pine); font-weight: 600; text-align: right; }
+.rental-cost-breakdown + .rental-grand-total { margin-top: 14px; padding-top: 13px; }
 .rental-submit { width: 100%; margin-top: 20px; min-height: 48px; }
 .rental-submit:disabled { opacity: .6; cursor: wait; }
 .rental-error { margin-top: 12px; color: #8a3027; font-size: 13px; line-height: 1.6; }
@@ -84,6 +132,7 @@
   .rental-panel { padding: 17px; border-radius: 19px; }
   .rental-date-fields { gap: 9px; }
   .rental-date-fields .account-field input { padding-inline: 8px; font-size: 12px; }
+  .rental-delivery-option { gap: 7px; padding: 10px; }
   .rental-selected-car { gap: 8px; }
   .rental-car-info { padding: 9px 4px 5px; }
   .rental-car-info h3 { font-size: 14px; }

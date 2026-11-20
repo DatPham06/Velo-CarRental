@@ -21,12 +21,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             select count(detail) from OrderDetailEntity detail
             where detail.car.id in :carIds
               and upper(detail.order.status) not in ('CANCELLED', 'CANCELED', 'RETURNED', 'COMPLETED')
-              and detail.order.startDate < :expireDate
-              and detail.order.expireDate > :startDate
+              and (upper(detail.order.status) = 'PENDING'
+                or (detail.order.startDate < :expireDate and detail.order.expireDate > :startDate))
             """)
-    long countOverlappingRentals(@Param("carIds") List<Long> carIds,
-                                @Param("startDate") Date startDate,
-                                @Param("expireDate") Date expireDate);
+    long countBlockingRentals(@Param("carIds") List<Long> carIds,
+                              @Param("startDate") Date startDate,
+                              @Param("expireDate") Date expireDate);
     List<OrderEntity> findAllByOrderByIdDesc();
 
     @Query("""

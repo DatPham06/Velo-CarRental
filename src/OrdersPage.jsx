@@ -8,10 +8,11 @@ import CarImage from './CarImage.jsx';
 import { AdminNav } from './AdminLayout.jsx';
 import { requestApi } from './api.js';
 import { formatPrice } from './rental.js';
+import { useAccount, accountLabel } from './accountSession.js';
 import './orders.css';
 
 const labels = {
-  PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', RENTING: 'Đang thuê',
+  PENDING: 'Đang chờ xác nhận', CONFIRMED: 'Đã xác nhận', RENTING: 'Đang thuê',
   RETURNED: 'Đã trả xe', CANCELLED: 'Đã hủy',
 };
 const actions = { CONFIRMED: 'Xác nhận đơn', RENTING: 'Giao xe', RETURNED: 'Nhận lại xe', CANCELLED: 'Hủy đơn' };
@@ -39,7 +40,7 @@ function OrderCard({ order, admin, busy, onUpdate }) {
         <div className="order-fact"><small><CalendarDays size={14} aria-hidden="true" /> Lịch thuê</small>
           <strong>{shortDate(order.startDate)} – {shortDate(order.expireDate)}</strong>
         </div>
-        <div className="order-fact order-amount"><small>Tiền thuê theo lịch</small><strong>{formatPrice(order.totalPrice)}</strong></div>
+        <div className="order-fact order-amount"><small>Tổng tiền đơn thuê</small><strong>{formatPrice(order.totalPrice)}</strong></div>
       </div>
       {!admin && step >= 0 && (
         <ol className="order-progress" aria-label="Tiến trình đơn thuê">
@@ -54,6 +55,12 @@ function OrderCard({ order, admin, busy, onUpdate }) {
         <summary>Chi tiết đơn thuê</summary>
         <dl>
           {order.cars.map(car => <div key={car.id}><dt>{car.productName}</dt><dd>{formatPrice(car.rentalPricePerDay)} / ngày</dd></div>)}
+          <div><dt>Tiền thuê theo lịch</dt><dd>{formatPrice(order.rentalSubtotal ?? order.totalPrice)}</dd></div>
+          {order.deliveryMethod === 'DELIVERY' && <>
+            <div><dt>Địa chỉ giao xe</dt><dd className="order-delivery-address">{order.deliveryAddress}</dd></div>
+            <div><dt>Phí giao xe</dt><dd>{formatPrice(order.deliveryFee)}</dd></div>
+          </>}
+          {order.promotionCode && <div><dt>Giảm giá ({order.promotionCode})</dt><dd>{formatPrice(-Number(order.discountAmount))}</dd></div>}
           <div><dt>Phí trễ cho cả đơn</dt><dd>{formatPrice(order.lateFeePerDay)} / ngày trễ</dd></div>
           {order.status === 'RETURNED' && <div><dt>Ngày trả thực tế</dt><dd>{shortDate(order.returnDate)}</dd></div>}
           {lateDays != null && <div><dt>{order.status === 'RENTING' ? 'Phí trễ tạm tính' : 'Phí trả trễ'} ({lateDays} ngày)</dt><dd>{formatPrice(lateDays * order.lateFeePerDay)}</dd></div>}
@@ -85,6 +92,7 @@ function OrderCard({ order, admin, busy, onUpdate }) {
 }
 
 export default function OrdersPage({ admin = false }) {
+  const { account } = useAccount();
   const title = admin ? 'Quản lý đơn thuê' : 'Đơn thuê của tôi';
   const [status, setStatus] = useState('ALL');
   const [page, setPage] = useState(0);
@@ -135,7 +143,7 @@ export default function OrdersPage({ admin = false }) {
         <Brand href="/" />
         <nav className="rental-header-links" aria-label="Điều hướng tài khoản">
           <a href="/" className="account-back"><ArrowLeft size={16} aria-hidden="true" /> Trang chủ</a>
-          <a href="/account" className="button button-outline" aria-label="Tài khoản"><UserRound size={16} aria-hidden="true" /><span>Tài khoản</span></a>
+          <a href="/account" className="button button-outline" title={account ? accountLabel(account) : undefined}><UserRound size={16} aria-hidden="true" /><span className="account-link-name">{accountLabel(account)}</span></a>
         </nav>
       </header>
       <main className="container orders-page" id="orders-main">

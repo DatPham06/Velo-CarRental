@@ -4,6 +4,8 @@ import com.velo.entity.OrderDetailEntity;
 import com.velo.entity.OrderEntity;
 import com.velo.entity.PaymentEntity;
 import com.velo.entity.ProductEntity;
+import com.velo.entity.PromotionEntity;
+import com.velo.dto.response.order.CartQuote;
 import com.velo.dto.response.order.RentalQuote;
 import com.velo.dto.response.order.OrderSummary;
 import com.velo.dto.response.order.PaymentCheckout;
@@ -11,6 +13,7 @@ import com.velo.entity.user.AccountEntity;
 import com.velo.repository.OrderRepository;
 import com.velo.repository.PaymentRepository;
 import com.velo.repository.ProductRepository;
+import com.velo.repository.PromotionRepository;
 import com.velo.service.OrderService;
 import org.hibernate.Hibernate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,12 +27,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Locale;
 import java.util.function.Function;
@@ -42,20 +47,29 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final ProductRepository productRepository;
+    private final PromotionRepository promotionRepository;
     private final BigDecimal lateFeePerDay;
+    private final BigDecimal deliveryFee;
     private final PaymentCheckout.BankAccount bank;
 
     public OrderServiceImpl(OrderRepository orderRepository, PaymentRepository paymentRepository,
-                            ProductRepository productRepository, PaymentCheckout.BankAccount bank,
-                            @Value("${velo.rental.late-fee-per-day:100000}") BigDecimal lateFeePerDay) {
+                            ProductRepository productRepository, PromotionRepository promotionRepository,
+                            PaymentCheckout.BankAccount bank,
+                            @Value("${velo.rental.late-fee-per-day:100000}") BigDecimal lateFeePerDay,
+                            @Value("${velo.rental.delivery-fee:150000}") BigDecimal deliveryFee) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.productRepository = productRepository;
+        this.promotionRepository = promotionRepository;
         this.bank = bank;
         if (lateFeePerDay.signum() < 0) {
             throw new IllegalArgumentException("Phí trễ hạn phải lớn hơn hoặc bằng 0.");
         }
         this.lateFeePerDay = lateFeePerDay;
+        if (deliveryFee.signum() < 0 || deliveryFee.stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException("Phí giao xe không hợp lệ.");
+        }
+        this.deliveryFee = deliveryFee;
     }
 
     @Override
@@ -66,10 +80,65 @@ public class OrderServiceImpl implements OrderService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy xe.");
         }
         requireAvailable(List.of(car.getId()), startDate, expireDate);
-        BigDecimal price = rentalPrice(car);
         long days = ChronoUnit.DAYS.between(startDate, expireDate);
+        return quoteLine(car, startDate, expireDate, days);
+    }
+
+    @Override
+    public CartQuote quoteCart(List<Long> carIds, LocalDate startDate, LocalDate expireDate,
+                               String deliveryMethod, String promotionCode) {
+        validateDates(startDate, expireDate);
+        if (carIds.isEmpty() || carIds.stream().anyMatch(id -> id == null || id <= 0)
+                || carIds.stream().distinct().count() != carIds.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Danh sách xe không hợp lệ.");
+        }
+        List<ProductEntity> cars = productRepository.findAllById(carIds);
+        if (cars.size() != carIds.size()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy xe.");
+        }
+        requireAvailable(carIds, startDate, expireDate);
+        return calculateCartQuote(cars, startDate, expireDate, normalizeDeliveryMethod(deliveryMethod), promotionCode);
+    }
+
+    private RentalQuote quoteLine(ProductEntity car, LocalDate startDate, LocalDate expireDate, long days) {
+        BigDecimal price = rentalPrice(car);
         return new RentalQuote(car.getId(), car.getProductName(), startDate, expireDate,
                 days, price, price.multiply(BigDecimal.valueOf(days)), lateFeePerDay);
+    }
+
+    private CartQuote calculateCartQuote(List<ProductEntity> cars, LocalDate startDate, LocalDate expireDate,
+                                         String deliveryMethod, String promotionCode) {
+        long days = ChronoUnit.DAYS.between(startDate, expireDate);
+        List<RentalQuote> items = cars.stream().map(car -> quoteLine(car, startDate, expireDate, days)).toList();
+        BigDecimal daily = items.stream().map(RentalQuote::pricePerDay).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal subtotal = daily.multiply(BigDecimal.valueOf(days));
+        BigDecimal fee = "DELIVERY".equals(deliveryMethod) ? deliveryFee : BigDecimal.ZERO;
+        PromotionEntity promotion = findPromotion(promotionCode);
+        BigDecimal discount = promotion == null ? BigDecimal.ZERO : subtotal
+                .multiply(BigDecimal.valueOf(promotion.getDiscountPercent(), 2))
+                .setScale(0, RoundingMode.HALF_UP).min(subtotal);
+        return new CartQuote(startDate, expireDate, days, items, daily, subtotal, lateFeePerDay, deliveryMethod,
+                fee, promotion == null ? null : promotion.getCode(), discount, subtotal.add(fee).subtract(discount));
+    }
+
+    private PromotionEntity findPromotion(String input) {
+        if (input == null || input.isBlank()) return null;
+        String code = input.strip().toUpperCase(Locale.ROOT);
+        if (code.length() <= 32) {
+            var promotion = promotionRepository.findById(code)
+                    .filter(item -> item.isActive() && item.getDiscountPercent() >= 1 && item.getDiscountPercent() <= 100);
+            if (promotion.isPresent()) return promotion.get();
+        }
+        throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Mã khuyến mãi không hợp lệ hoặc đã ngừng áp dụng.");
+    }
+
+    private String normalizeDeliveryMethod(String value) {
+        if (value == null || value.isBlank()) return "PICKUP";
+        String method = value.strip().toUpperCase(Locale.ROOT);
+        if (!"PICKUP".equals(method) && !"DELIVERY".equals(method)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hình thức nhận xe không hợp lệ.");
+        }
+        return method;
     }
 
     @Override
@@ -78,6 +147,14 @@ public class OrderServiceImpl implements OrderService {
         LocalDate startDate = asLocalDate(orderEntity.getStartDate());
         LocalDate expireDate = asLocalDate(orderEntity.getExpireDate());
         validateDates(startDate, expireDate);
+        String method = normalizeDeliveryMethod(orderEntity.getDeliveryMethod());
+        String address = null;
+        if ("DELIVERY".equals(method)) {
+            address = orderEntity.getDeliveryAddress() == null ? "" : orderEntity.getDeliveryAddress().strip();
+            if (address.isBlank() || address.length() > 255) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nhập địa chỉ giao xe từ 1 đến 255 ký tự.");
+            }
+        }
         List<OrderDetailEntity> orderDetails = orderEntity.getOrderDetails();
         if (orderDetails == null || orderDetails.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Đơn thuê phải có ít nhất một xe.");
@@ -93,20 +170,19 @@ public class OrderServiceImpl implements OrderService {
         if (carIds.size() != orderDetails.size()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mỗi xe chỉ xuất hiện một lần trong đơn.");
         }
-        Map<Long, ProductEntity> cars = productRepository.findAllForRental(carIds).stream()
-                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
-        if (cars.size() != carIds.size()) {
+        List<ProductEntity> lockedCars = productRepository.findAllForRental(carIds);
+        if (lockedCars.size() != carIds.size()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy xe.");
         }
         requireAvailable(carIds, startDate, expireDate);
-        BigDecimal dailyTotal = BigDecimal.ZERO;
+        CartQuote price = calculateCartQuote(lockedCars, startDate, expireDate, method, orderEntity.getPromotionCode());
+        Map<Long, ProductEntity> cars = lockedCars.stream()
+                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
         for (OrderDetailEntity detail : orderDetails) {
             ProductEntity car = cars.get(detail.getCar().getId());
-            BigDecimal price = rentalPrice(car);
             detail.setCar(car);
-            detail.setRentalPricePerDay(price);
+            detail.setRentalPricePerDay(car.getPricePerDay());
             detail.setOrder(orderEntity);
-            dailyTotal = dailyTotal.add(price);
         }
         orderEntity.setId(null);
         orderEntity.setAccount(account);
@@ -115,7 +191,12 @@ public class OrderServiceImpl implements OrderService {
         orderEntity.setReturnDate(null);
         orderEntity.setStatus("PENDING");
         orderEntity.setLateFeePerDay(lateFeePerDay);
-        orderEntity.setTotalPrice(dailyTotal.multiply(BigDecimal.valueOf(ChronoUnit.DAYS.between(startDate, expireDate))));
+        orderEntity.setDeliveryMethod(method);
+        orderEntity.setDeliveryAddress(address);
+        orderEntity.setDeliveryFee(price.deliveryFee());
+        orderEntity.setPromotionCode(price.promotionCode());
+        orderEntity.setDiscountAmount(price.discountAmount());
+        orderEntity.setTotalPrice(price.totalPrice());
         return orderRepository.save(orderEntity);
     }
 
@@ -134,8 +215,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void requireAvailable(List<Long> carIds, LocalDate startDate, LocalDate expireDate) {
-        if (orderRepository.countOverlappingRentals(carIds, asDate(startDate), asDate(expireDate)) > 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Xe đã có lịch thuê trong khoảng ngày này.");
+        if (orderRepository.countBlockingRentals(carIds, asDate(startDate), asDate(expireDate)) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Xe đang được giữ hoặc đã có lịch thuê trong khoảng ngày này.");
         }
     }
 
@@ -211,8 +292,13 @@ public class OrderServiceImpl implements OrderService {
             default -> null;
         };
         Long lateDays = feeThrough == null ? null : Math.max(0L, ChronoUnit.DAYS.between(due, feeThrough));
+        BigDecimal fee = Objects.requireNonNullElse(order.getDeliveryFee(), BigDecimal.ZERO);
+        BigDecimal discount = Objects.requireNonNullElse(order.getDiscountAmount(), BigDecimal.ZERO);
+        BigDecimal subtotal = order.getTotalPrice().subtract(fee).add(discount);
         return new OrderSummary(order.getId(), account.getFullName(), account.getEmail(), status,
-                rentalDate(order.getStartDate()), due, returned, order.getTotalPrice(), order.getLateFeePerDay(),
+                rentalDate(order.getStartDate()), due, returned, order.getTotalPrice(), subtotal,
+                normalizeDeliveryMethod(order.getDeliveryMethod()), order.getDeliveryAddress(), fee,
+                order.getPromotionCode(), discount, order.getLateFeePerDay(),
                 lateDays, cars, admin ? nextStatuses(order) : List.of());
     }
 

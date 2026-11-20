@@ -6,7 +6,10 @@ import java.util.List;
 
 public record OrderSummary(Long id, String customerName, String customerEmail, String status,
                            LocalDate startDate, LocalDate expireDate, LocalDate returnDate,
-                           BigDecimal totalPrice, BigDecimal lateFeePerDay, Long lateDays, List<Car> cars,
+                           BigDecimal totalPrice, BigDecimal rentalSubtotal,
+                           String deliveryMethod, String deliveryAddress, BigDecimal deliveryFee,
+                           String promotionCode, BigDecimal discountAmount,
+                           BigDecimal lateFeePerDay, Long lateDays, List<Car> cars,
                            List<String> allowedStatuses) {
     public record Car(Long id, String productName, String img, BigDecimal rentalPricePerDay) {}
     public record Page(List<OrderSummary> orders, int page, int totalPages, long totalOrders) {}

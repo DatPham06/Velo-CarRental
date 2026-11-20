@@ -93,10 +93,12 @@ await login('user.demo@velo.test', 'User@123456');
 
 const forged = await call('/account/register', { method: 'POST', body: {
   fullName: 'Smoke Registration', email: `registration.${crypto.randomUUID()}@velo.test`, password: 'Registration@123', phone: '0900000099',
+  cccd: `000${crypto.getRandomValues(new Uint32Array(1))[0].toString().slice(-9).padStart(9, '0')}`,
   role: 'ADMIN', banned: true, id: admin.data.id,
 } });
 status(forged, 201, 'Registration ignores managed fields');
 assert.equal(forged.data.role, 'USER');
 assert.equal(forged.data.banned, false);
+assert(!Object.hasOwn(forged.data, 'cccd'));
 assert.notEqual(forged.data.id, admin.data.id);
 console.log(`PASS: ${checks} API checks, car CRUD, authorization, rental references, account ban/unban and session invalidation.`);

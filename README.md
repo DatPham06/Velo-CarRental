@@ -13,6 +13,8 @@ npm.cmd run dev
 
 Mở `http://localhost:5173/account` hoặc chọn **Tài khoản** trên trang chủ. Vite chuyển `POST /api/account/register` và `POST /api/account/login` đến hai endpoint tương ứng dưới `/account` của Spring Boot tại `http://127.0.0.1:8080`. Nếu backend dùng cổng khác, đặt `$env:BACKEND_URL = 'http://127.0.0.1:8081'` trước khi chạy Vite.
 
+Đăng ký mới yêu cầu số CCCD gồm 12 chữ số, lưu dưới dạng chuỗi trong cột `account.cccd`. Hai tài khoản mới không được dùng chung CCCD. Tài khoản cũ có thể giữ cột này là `NULL` và đăng nhập bình thường. API tài khoản không trả số CCCD.
+
 Để thêm hai tài khoản test vào MySQL, mở và chạy toàn bộ file `backend/velo/sql/demo-accounts.sql` trong DBeaver hoặc công cụ SQL đang dùng, sau khi backend đã tạo bảng `account`. File chọn database `velo` và bỏ qua email đã tồn tại, giữ nguyên mật khẩu và role của tài khoản cũ.
 
 | Role | Email đăng nhập | Mật khẩu demo |
@@ -26,7 +28,7 @@ Khi phục vụ bản build bằng Nginx, cấu hình fallback về `index.html`
 
 File `backend/velo/sql/demo-cars.sql` thêm 5 xe mẫu vào database `velo`, mỗi hãng một xe: Toyota, Honda, Mazda, Hyundai và Kia. Giá là dữ liệu demo, trạng thái ban đầu là `AVAILABLE`. Chạy lại file sẽ bỏ qua xe trùng hãng và tên, giữ nguyên dữ liệu cũ. Toyota, Mazda và Kia dùng ảnh có sẵn trong project; Honda và Hyundai để `img = NULL` và giao diện hiển thị biểu tượng chưa có ảnh.
 
-Chọn một hoặc nhiều xe trên trang chủ, rồi bấm **Thuê xe** để chuyển sang `/rent`. Trang chủ lấy danh sách xe từ `GET /product/getall` và lọc theo tên, hãng xe. Trang xác nhận hiển thị các xe đã chọn và lấy báo giá cho từng xe từ `GET /order/quote?carId=1&startDate=2026-12-01&expireDate=2026-12-03`. Lịch trống được kiểm tra khi lấy báo giá và tạo đơn. Cần có tài khoản và xe trong database để thử luồng này.
+Chọn một hoặc nhiều xe trên trang chủ, rồi bấm **Thuê xe** để chọn ngày ở `/rent`. Trang chủ lấy danh sách từ `GET /product/rentable` và lọc theo tên hoặc hãng. API bỏ qua xe trong đơn `PENDING`. Khi admin xác nhận hoặc hủy đơn, xe hiện lại và backend tiếp tục kiểm tra ngày trùng lịch. Trang xác nhận lấy báo giá cả giỏ từ `GET /order/cart-quote` theo xe, ngày, hình thức nhận và mã khuyến mãi.
 
 Lựa chọn xe và ngày thuê được giữ trong `sessionStorage` cùng các tham số trên URL chuyển trang, để có thể tải lại hoặc đăng nhập rồi tiếp tục. Nút **Thay đổi xe** đưa về trang chủ. Khi tạo đơn thành công, giỏ thuê được xóa. Truy cập `/rent` khi chưa chọn xe sẽ hiển thị liên kết về trang chủ.
 
@@ -34,15 +36,21 @@ Backend tính số ngày từ ngày nhận đến trước ngày trả theo lị
 
 Khi tạo đơn, backend xác định người thuê từ phiên đăng nhập, lấy lại giá xe, tính tổng tiền và đặt trạng thái `PENDING`. Request gửi một lần đến `POST /order/create`, gồm `startDate`, `expireDate`, `orderDetails: [{ car: { id: 1 } }, { car: { id: 2 } }]`. Các xe trong một đơn dùng chung ngày nhận, ngày trả. Nếu lịch khác nhau thì tạo đơn riêng. Bảng phí từng ngày cộng giá thuê của tất cả xe. Backend kiểm tra lịch trùng trong transaction và khóa bản ghi xe để xử lý hai yêu cầu đặt cùng lúc. Nếu một xe trong đơn bị trùng lịch, toàn bộ đơn bị từ chối.
 
+Chọn **Giao tận nơi** để nhập địa chỉ. Phí giao mặc định là **150.000đ/đơn**, cấu hình qua `velo.rental.delivery-fee` hoặc `VELO_RENTAL_DELIVERY_FEE`. Backend lưu địa chỉ và phí trên đơn. Tự nhận xe có phí giao bằng 0.
+
+Chạy `backend/velo/sql/demo-promotions.sql` để tạo bảng `promotion` và thêm `VELO10` (giảm 10%) cùng `VELO15` (giảm 15%). Mỗi đơn dùng một mã đang hoạt động. Mức giảm tính trên tiền thuê theo lịch. Phí giao được cộng sau giảm giá, phí trễ tính riêng. Chạy lại SQL giữ nguyên mã đã có.
+
+Khi cập nhật backend, chạy với `ddl-auto: update` để thêm `account.cccd` và các cột giao xe, khuyến mãi trong `orders`. Nếu đang dùng `ddl-auto: validate`, cần cập nhật schema trước khi khởi động lại.
+
 `returnDate` là ngày trả thực tế, để `null` khi mới đặt. Cột `orders.return_date` trong MySQL cần cho phép `NULL`. Nếu đặt thuê báo lỗi `Field 'return_date' doesn't have a default value`, chạy file `backend/velo/sql/fix-order-return-date.sql` để cập nhật cột, giữ nguyên kiểu `datetime(6)` và dữ liệu hiện có. Cấu hình `ddl-auto: validate` chỉ kiểm tra schema và không sửa ràng buộc cũ này; sau khi chạy SQL có thể đặt thuê lại mà không cần khởi động lại backend.
 
 ## Thanh toán
 
-Bấm **Đặt thuê** ở trang xác nhận để tạo đơn và mở `/payment/{id}`. Khách chọn **Tiền mặt** khi nhận xe hoặc **Chuyển khoản ngân hàng**, rồi bấm **Xác nhận phương thức**. Có thể mở lại trang này từ **Đơn thuê của tôi → Xem thanh toán**.
+Bấm **Đặt thuê** ở trang xác nhận để tạo đơn và mở `/payment/{id}`. Chọn **Tiền mặt** hoặc **Chuyển khoản ngân hàng**, rồi bấm **Thanh toán**. Trang hiển thị **Đang chờ xác nhận** và nút **Theo dõi đơn thuê**. Có thể mở lại trang này từ **Đơn thuê của tôi → Xem thanh toán**.
 
 Trang lấy đơn, phương thức đã lưu và tài khoản thụ hưởng từ `GET /order/{id}/checkout`. Lựa chọn được lưu qua `POST /order/{id}/payment?paymentMethod=CASH` hoặc `BANK_TRANSFER`. Mỗi đơn có tối đa một thanh toán. Trạng thái `PENDING` nghĩa là đang chờ nhận tiền.
 
-Để hiện hướng dẫn chuyển khoản, đặt ba biến môi trường trên backend trước khi chạy Spring Boot. `VELO_PAYMENT_BANK_NAME` là tên ngân hàng, `VELO_PAYMENT_BANK_NUMBER` là số tài khoản (giữ cả số 0 đầu nếu có), `VELO_PAYMENT_BANK_HOLDER` là tên chủ tài khoản. Khi có đủ thông tin, trang hiển thị số tiền thuê theo lịch và nội dung chuyển khoản `VELO-{id}`. Khi thiếu cấu hình, khách vẫn có thể lưu phương thức và xem lại sau.
+Để hiện hướng dẫn chuyển khoản, đặt ba biến môi trường trên backend trước khi chạy Spring Boot. `VELO_PAYMENT_BANK_NAME` là tên ngân hàng, `VELO_PAYMENT_BANK_NUMBER` là số tài khoản (giữ cả số 0 đầu nếu có), `VELO_PAYMENT_BANK_HOLDER` là tên chủ tài khoản. Khi có đủ thông tin, trang hiển thị tổng thanh toán và nội dung chuyển khoản `VELO-{id}`. Khi thiếu cấu hình, khách vẫn có thể lưu phương thức và xem lại sau.
 
 ## Theo dõi và quản lý đơn thuê
 

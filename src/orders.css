@@ -41,6 +41,7 @@
 .order-details dl > div { display: flex; justify-content: space-between; gap: 12px; padding-block: 6px; font-size: 13px; }
 .order-details dt { color: var(--muted); overflow-wrap: anywhere; }
 .order-details dd { margin: 0; text-align: right; }
+.order-details .order-delivery-address { min-width: 0; overflow-wrap: anywhere; }
 .order-actions { margin-top: 15px; flex-wrap: wrap; }
 .order-actions .button { min-height: 37px; padding: 8px 15px; font-size: 13px; }
 .order-actions p { font-size: 14px; font-weight: 600; }

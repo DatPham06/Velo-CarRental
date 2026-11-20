@@ -7,6 +7,7 @@ import Brand from './Brand.jsx';
 import { submitAccount } from './accountApi.js';
 import { useAccount, roleLabel } from './accountSession.js';
 import { requestApi } from './api.js';
+import { clearRentalDeliveryAddress } from './rentalCart.js';
 import './account.css';
 
 function AccountProfile({ account, headingRef, busy, error, onLogout }) {
@@ -107,10 +108,15 @@ export default function AccountPage() {
     const data = { email: fields.get('email').trim().toLowerCase(), password: fields.get('password') };
     if (isRegister) {
       data.fullName = fields.get('fullName').trim();
+      data.cccd = fields.get('cccd').trim();
       const phone = fields.get('phone').trim();
       if (phone) data.phone = phone;
       if (!data.fullName) {
         setFeedback({ type: 'error', text: 'Vui lòng nhập họ và tên.' });
+        return;
+      }
+      if (!/^[0-9]{12}$/.test(data.cccd)) {
+        setFeedback({ type: 'error', text: 'CCCD phải có đúng 12 chữ số.' });
         return;
       }
       if (data.password !== fields.get('confirmPassword')) {
@@ -145,6 +151,7 @@ export default function AccountPage() {
     setFeedback(null);
     try {
       await requestApi('/account/logout', { method: 'POST' });
+      clearRentalDeliveryAddress();
       setAccount(null);
       setShowPassword(false);
     } catch (error) {
@@ -205,6 +212,12 @@ export default function AccountPage() {
                     <label className="account-field">
                       <span>Số điện thoại <small>(không bắt buộc)</small></span>
                       <input type="tel" name="phone" autoComplete="tel" maxLength={30} placeholder="090 000 0000" />
+                    </label>
+                  )}
+                  {isRegister && (
+                    <label className="account-field">
+                      <span>Số CCCD <small>(12 chữ số)</small></span>
+                      <input name="cccd" inputMode="numeric" autoComplete="off" pattern="[0-9]{12}" maxLength={12} required />
                     </label>
                   )}
                   <div className="account-field">

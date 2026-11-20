@@ -36,6 +36,10 @@ public class AccountEntity {
     @Column(name = "Phone")
     private String phone;
 
+    @Column(name = "cccd", length = 12, unique = true)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String cccd;
+
     @Column(name = "Role")
     private String role = "USER";
 
@@ -88,6 +92,14 @@ public class AccountEntity {
 
     public String getPhone() {
         return phone;
+    }
+
+    public String getCccd() {
+        return cccd;
+    }
+
+    public void setCccd(String cccd) {
+        this.cccd = cccd;
     }
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

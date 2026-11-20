@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Banknote, CalendarDays, CircleCheck, Landmark } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Banknote, CalendarDays, CheckCircle2, Clock3, Landmark, Truck } from 'lucide-react';
 import Brand from './Brand.jsx';
 import CarImage from './CarImage.jsx';
 import { requestApi } from './api.js';
 import { formatPrice } from './rental.js';
+import RentalCostBreakdown from './RentalCostBreakdown.jsx';
 import './payment.css';
 
 const methods = [
   { value: 'CASH', label: 'Tiền mặt', icon: Banknote, description: 'Thanh toán khi nhận xe.' },
   { value: 'BANK_TRANSFER', label: 'Chuyển khoản ngân hàng', icon: Landmark, description: 'Chuyển tiền theo mã đơn thuê.' },
 ];
-const paymentStatuses = { PENDING: 'Chờ thanh toán', PAID: 'Đã thanh toán', FAILED: 'Thanh toán thất bại', CANCELLED: 'Đã hủy' };
+const paymentStatuses = { PENDING: 'Đang chờ xác nhận', PAID: 'Đã thanh toán', FAILED: 'Thanh toán thất bại', CANCELLED: 'Đã hủy' };
 const displayDate = value => value.split('-').reverse().join('/');
 
 function PaymentSummary({ order }) {
@@ -24,7 +25,13 @@ function PaymentSummary({ order }) {
           <div><strong>{car.productName}</strong><small>{formatPrice(car.rentalPricePerDay)} / ngày</small></div>
         </li>)}
       </ul>
-      <div className="rental-grand-total"><span>Tiền thuê theo lịch</span><strong>{formatPrice(order.totalPrice)}</strong></div>
+      {order.deliveryMethod === 'DELIVERY' && (
+        <div className="payment-delivery">
+          <Truck size={17} aria-hidden="true" />
+          <div><strong>Giao tận nơi</strong><p>{order.deliveryAddress}</p></div>
+        </div>
+      )}
+      <RentalCostBreakdown pricing={order} />
       <p className="payment-fine-print">Phí trả trễ tính riêng, {formatPrice(order.lateFeePerDay)} / ngày cho cả đơn.</p>
     </aside>
   );
@@ -39,7 +46,7 @@ function TransferInstructions({ order, bank }) {
         <div><dt>Ngân hàng</dt><dd>{bank.name}</dd></div>
         <div><dt>Chủ tài khoản</dt><dd>{bank.holder}</dd></div>
         <div><dt>Số tài khoản</dt><dd>{bank.number}</dd></div>
-        <div><dt>Số tiền thuê</dt><dd>{formatPrice(order.totalPrice)}</dd></div>
+        <div><dt>Số tiền chuyển khoản</dt><dd>{formatPrice(order.totalPrice)}</dd></div>
         <div><dt>Nội dung chuyển khoản</dt><dd>VELO-{order.id}</dd></div>
       </dl>
     </section>
@@ -113,11 +120,14 @@ export default function PaymentPage({ orderId }) {
               {order.status === 'CANCELLED' ? <><h2>Đơn thuê đã hủy</h2><p>Đơn #{order.id} đã ngừng nhận thanh toán.</p></>
                 : payment ? (
                   <>
-                    <h2><CircleCheck size={22} aria-hidden="true" /> Phương thức đã ghi nhận</h2>
-                    <p className="payment-saved" role="status">
-                      <strong>{methods.find(item => item.value === savedMethod)?.label || payment.paymentMethod}</strong>
-                      <span>{paymentStatuses[status] || payment.status}</span>
-                    </p>
+                    <div className="payment-saved" role="status">
+                      <h2>
+                        {status === 'PENDING' && <Clock3 size={22} aria-hidden="true" />}
+                        {status === 'PAID' && <CheckCircle2 size={22} aria-hidden="true" />}
+                        {paymentStatuses[status] || payment.status}
+                      </h2>
+                      <p>Phương thức thanh toán <strong>{methods.find(item => item.value === savedMethod)?.label || payment.paymentMethod}</strong></p>
+                    </div>
                     {status === 'PENDING' && savedMethod === 'CASH' && <p className="payment-note">Thanh toán {formatPrice(order.totalPrice)} bằng tiền mặt cho nhân viên Velo khi nhận xe.</p>}
                     {status === 'PENDING' && savedMethod === 'BANK_TRANSFER' && <TransferInstructions order={order} bank={checkout.bank} />}
                   </>
@@ -139,11 +149,11 @@ export default function PaymentPage({ orderId }) {
                       : 'Tài khoản nhận tiền chưa được công bố. Bạn có thể lưu lựa chọn và liên hệ Velo để lấy thông tin chuyển khoản.'}</p>}
                     {saveError && <p className="rental-error" role="alert">{saveError}</p>}
                     <button className="button button-primary payment-submit" type="submit" disabled={!method || busy}>
-                      {busy ? 'Đang ghi nhận…' : 'Xác nhận phương thức'} <ArrowRight size={16} aria-hidden="true" />
+                      {busy ? 'Đang ghi nhận…' : 'Thanh toán'} <ArrowRight size={16} aria-hidden="true" />
                     </button>
                   </form>
                 )}
-              {(payment || order.status === 'CANCELLED') && <a className="button button-outline payment-submit" href="/orders">Theo dõi đơn thuê <ArrowRight size={16} aria-hidden="true" /></a>}
+              {(payment || order.status === 'CANCELLED') && <a className="button button-primary payment-submit" href="/orders">Theo dõi đơn thuê <ArrowRight size={16} aria-hidden="true" /></a>}
             </section>
             <PaymentSummary order={order} />
           </div>

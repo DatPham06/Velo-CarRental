@@ -15,12 +15,12 @@ import OrdersPage from './OrdersPage.jsx';
 import PaymentPage from './PaymentPage.jsx';
 import AdminCarsPage from './AdminCarsPage.jsx';
 import AdminAccountsPage from './AdminAccountsPage.jsx';
-import { useAccount } from './accountSession.js';
+import { useAccount, accountLabel } from './accountSession.js';
 import Brand from './Brand.jsx';
 import CarImage from './CarImage.jsx';
 import { getCars } from './rentalApi.js';
 import { readRentalCart, rememberRentalCart, rentalHref } from './rentalCart.js';
-import { addDays, dateKey, formatPrice, rentalDays } from './rental.js';
+import { formatPrice } from './rental.js';
 import './styles.css';
 
 const steps = [
@@ -58,14 +58,9 @@ function CarCard({ car, chosen, onSelect }) {
 function App() {
   const { account } = useAccount();
   const admin = account?.role === 'ADMIN';
-  const today = dateKey();
   const [initialCart] = useState(readRentalCart);
-  const [draft, setDraft] = useState(() => ({
-    keyword: '',
-    pickup: initialCart.startDate,
-    dropoff: initialCart.expireDate,
-  }));
-  const [search, setSearch] = useState(draft);
+  const [keyword, setKeyword] = useState('');
+  const [search, setSearch] = useState('');
   const [brand, setBrand] = useState('Tất cả');
   const [error, setError] = useState('');
   const [cars, setCars] = useState(null);
@@ -76,26 +71,47 @@ function App() {
   const availableCars = (cars || []).filter((car) => (
     (brand === 'Tất cả' || (car.brand || car.Brand) === brand)
     && `${car.productName} ${car.brand || car.Brand || ''}`.toLocaleLowerCase('vi')
-      .includes(search.keyword.trim().toLocaleLowerCase('vi'))
+      .includes(search.trim().toLocaleLowerCase('vi'))
   ));
   const selectedCars = (cars || []).filter((car) => carIds.includes(car.id));
   const missingCars = cars !== null && selectedCars.length !== carIds.length;
-  const cart = { carIds, startDate: draft.pickup, expireDate: draft.dropoff };
+  const cart = { carIds, startDate: initialCart.startDate, expireDate: initialCart.expireDate };
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoadError('');
-    getCars(controller.signal).then(setCars).catch((err) => {
-      if (!controller.signal.aborted) setLoadError(err.message);
-    });
-    return () => controller.abort();
+    let loadingCars = false;
+    async function refreshCars() {
+      if (loadingCars || document.hidden) return;
+      loadingCars = true;
+      try {
+        const data = await getCars(controller.signal);
+        if (controller.signal.aborted) return;
+        setCars(data);
+        setLoadError('');
+      } catch (err) {
+        if (!controller.signal.aborted) setLoadError(err.message);
+      } finally {
+        loadingCars = false;
+      }
+    }
+    refreshCars();
+    window.addEventListener('focus', refreshCars);
+    document.addEventListener('visibilitychange', refreshCars);
+    const timer = window.setInterval(refreshCars, 15000);
+    return () => {
+      controller.abort();
+      window.removeEventListener('focus', refreshCars);
+      document.removeEventListener('visibilitychange', refreshCars);
+      window.clearInterval(timer);
+    };
   }, [retry]);
 
   useEffect(() => {
-    rememberRentalCart({ carIds, startDate: draft.pickup, expireDate: draft.dropoff });
-  }, [carIds, draft.pickup, draft.dropoff]);
+    rememberRentalCart({ ...readRentalCart(), carIds });
+  }, [initialCart, carIds]);
 
   function toggleCar(car) {
+    setError('');
     setCarIds((current) => current.includes(car.id) ? current.filter((id) => id !== car.id) : [...current, car.id]);
   }
 
@@ -106,47 +122,21 @@ function App() {
       document.getElementById('fleet-heading').focus();
       return;
     }
-    if (draft.pickup < today || !(rentalDays(draft.pickup, draft.dropoff) > 0)) {
-      event.preventDefault();
-      setError('Kiểm tra lại ngày nhận và ngày trả xe.');
-      document.getElementById('search').scrollIntoView();
-      return;
-    }
-    rememberRentalCart(cart);
-  }
-
-  function updateSearchField(event) {
-    const { name, value } = event.target;
-    setError('');
-    setDraft((current) => {
-      const updated = { ...current, [name]: value };
-      if (name === 'pickup' && value && updated.dropoff <= value) {
-        updated.dropoff = addDays(value, 1);
-      }
-      return updated;
-    });
+    rememberRentalCart({ ...readRentalCart(), ...cart });
   }
 
   function handleSearch(event) {
     event.preventDefault();
-    if (!draft.pickup || draft.pickup < today) {
-      setError('Chọn ngày nhận xe từ hôm nay trở đi.');
-      return;
-    }
-    if (!(rentalDays(draft.pickup, draft.dropoff) > 0)) {
-      setError('Ngày trả xe phải sau ngày nhận xe.');
-      return;
-    }
-    setSearch(draft);
+    setError('');
+    setSearch(keyword);
     setBrand('Tất cả');
     document.getElementById('fleet-heading').focus({ preventScroll: true });
     document.getElementById('fleet').scrollIntoView();
   }
 
   function resetFilters() {
-    const defaults = { keyword: '', pickup: addDays(today, 1), dropoff: addDays(today, 2) };
-    setDraft(defaults);
-    setSearch(defaults);
+    setKeyword('');
+    setSearch('');
     setBrand('Tất cả');
     setError('');
     document.getElementById('fleet-heading').focus();
@@ -166,8 +156,8 @@ function App() {
             <a className="button button-outline header-account" href={admin ? '/admin/orders' : '/orders'} aria-label={admin ? 'Quản lý đơn thuê' : 'Đơn thuê của tôi'}>
               <ClipboardList size={17} aria-hidden="true" /><span>{admin ? 'Quản lý đơn thuê' : 'Đơn thuê của tôi'}</span>
             </a>
-            <a className="button button-outline header-account" href="/account" aria-label="Tài khoản">
-              <UserRound size={17} aria-hidden="true" /> <span>Tài khoản</span>
+            <a className="button button-outline header-account" href="/account" title={account ? accountLabel(account) : undefined}>
+              <UserRound size={17} aria-hidden="true" /> <span className="account-link-name">{accountLabel(account)}</span>
             </a>
             <a className="button button-outline header-action" href={rentalHref(cart)} onClick={startRental}>
               Thuê xe{carIds.length > 0 && ` (${carIds.length})`} <ArrowUpRight size={16} aria-hidden="true" />
@@ -196,34 +186,13 @@ function App() {
             </div>
           </section>
 
-          <form id="search" className="search-panel" aria-label="Tìm xe theo tên và ngày thuê" onSubmit={handleSearch} noValidate>
+          <form id="search" className="search-panel" aria-label="Tìm xe theo tên hoặc hãng" onSubmit={handleSearch}>
             <div className="search-row">
-              <label className="search-field search-location">
+              <label className="search-field">
                 <CarFront size={20} className="field-icon" aria-hidden="true" />
                 <span className="field-content">
                   <span className="field-label">Tên xe hoặc hãng</span>
-                  <input name="keyword" value={draft.keyword} onChange={updateSearchField} placeholder="Tìm chiếc xe vừa ý" />
-                </span>
-              </label>
-              <label className="search-field">
-                <CalendarDays size={20} className="field-icon" aria-hidden="true" />
-                <span className="field-content">
-                  <span className="field-label">Ngày nhận xe</span>
-                  <input type="date" name="pickup" value={draft.pickup} min={today} onChange={updateSearchField} required />
-                </span>
-              </label>
-              <label className="search-field">
-                <CalendarDays size={20} className="field-icon" aria-hidden="true" />
-                <span className="field-content">
-                  <span className="field-label">Ngày trả xe</span>
-                  <input
-                    type="date"
-                    name="dropoff"
-                    value={draft.dropoff}
-                    min={addDays(draft.pickup && draft.pickup >= today ? draft.pickup : today, 1)}
-                    onChange={updateSearchField}
-                    required
-                  />
+                  <input name="keyword" value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Tìm chiếc xe vừa ý" />
                 </span>
               </label>
               <button type="submit" className="button button-primary search-button">
@@ -239,7 +208,7 @@ function App() {
             <div>
               <p className="section-label"><span /> ĐỘI XE VELO</p>
               <h2 id="fleet-heading" tabIndex={-1}>Tìm chiếc xe hợp chuyến đi</h2>
-              <p>Chọn một hoặc nhiều xe, sau đó bấm Thuê xe để xem tổng chi phí.</p>
+              <p>Chọn xe rồi bấm Thuê xe để chọn ngày và xem tổng chi phí.</p>
             </div>
             <span className="results-count" role="status">
               <ShoppingBag size={16} aria-hidden="true" />

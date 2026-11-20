@@ -1,17 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowLeft, ArrowRight, CalendarDays, Clock3, RefreshCw, UserRound,
+  ArrowLeft, ArrowRight, CalendarDays, Clock3, RefreshCw, Tag, Truck, UserRound,
 } from 'lucide-react';
 import Brand from './Brand.jsx';
-import { useAccount, roleLabel } from './accountSession.js';
+import { useAccount, roleLabel, accountLabel } from './accountSession.js';
 import { createRental, getCars, getCartQuote } from './rentalApi.js';
 import CarImage from './CarImage.jsx';
+import RentalCostBreakdown from './RentalCostBreakdown.jsx';
 import { readRentalCart, rememberRentalCart, rentalHref } from './rentalCart.js';
 import { addDays, dateKey, formatPrice, rentalDays } from './rental.js';
 import './rental-page.css';
 
 function displayDate(value) {
   return value.slice(0, 10).split('-').reverse().join('/');
+}
+
+function rentalErrorMessage(error, promotionCode) {
+  if (error.status === 409) return 'Một xe đang được giữ hoặc đã có lịch thuê. Vui lòng kiểm tra lại xe và ngày thuê.';
+  if (error.status === 422 && promotionCode) return 'Không áp dụng được mã khuyến mãi. Kiểm tra mã hoặc bỏ mã để tiếp tục.';
+  return error.message;
 }
 
 function DailyCosts({ quote }) {
@@ -39,6 +46,10 @@ export default function RentalPage() {
   const [cars, setCars] = useState(null);
   const [startDate, setStartDate] = useState(initialCart.startDate);
   const [expireDate, setExpireDate] = useState(initialCart.expireDate);
+  const [deliveryMethod, setDeliveryMethod] = useState(initialCart.deliveryMethod);
+  const [deliveryAddress, setDeliveryAddress] = useState(initialCart.deliveryAddress);
+  const [promotionDraft, setPromotionDraft] = useState(initialCart.promotionCode);
+  const [promotionCode, setPromotionCode] = useState(initialCart.promotionCode);
   const [loadError, setLoadError] = useState('');
   const [retry, setRetry] = useState(0);
   const [quoteResult, setQuoteResult] = useState(null);
@@ -50,11 +61,11 @@ export default function RentalPage() {
 
   const selectedCars = (cars || []).filter((car) => carIds.includes(car.id));
   const missingCars = cars !== null && selectedCars.length !== carIds.length;
-  const cart = { carIds, startDate, expireDate };
+  const cart = { carIds, startDate, expireDate, deliveryMethod, deliveryAddress, promotionCode };
   const homeHref = rentalHref(cart, '/') + '#fleet';
   const days = rentalDays(startDate, expireDate);
   const validDates = startDate >= today && Number.isFinite(days) && days > 0;
-  const quoteKey = [carIds.join(','), startDate, expireDate].join('/');
+  const quoteKey = JSON.stringify([carIds, startDate, expireDate, deliveryMethod, promotionCode]);
   const quote = quoteResult?.key === quoteKey ? quoteResult.data : null;
   const currentQuoteError = quoteError?.key === quoteKey ? quoteError.message : '';
   const lateDays = estimateDate && validDates ? Math.max(0, rentalDays(expireDate, estimateDate)) : 0;
@@ -77,8 +88,8 @@ export default function RentalPage() {
   }, [retry, carIds]);
 
   useEffect(() => {
-    rememberRentalCart({ carIds, startDate, expireDate });
-  }, [carIds, startDate, expireDate]);
+    rememberRentalCart({ carIds, startDate, expireDate, deliveryMethod, deliveryAddress, promotionCode });
+  }, [carIds, startDate, expireDate, deliveryMethod, deliveryAddress, promotionCode]);
 
   useEffect(() => {
     if (!carIds.length || !cars || missingCars || !validDates || loadError) return undefined;
@@ -86,17 +97,17 @@ export default function RentalPage() {
     setQuoteResult(null);
     setQuoteError(null);
     const timer = setTimeout(() => {
-      getCartQuote(carIds, startDate, expireDate, controller.signal).then((data) => {
+      getCartQuote({ carIds, startDate, expireDate, deliveryMethod, promotionCode }, controller.signal).then((data) => {
         if (!controller.signal.aborted) setQuoteResult({ key: quoteKey, data });
       }).catch((error) => {
-        if (!controller.signal.aborted) setQuoteError({ key: quoteKey, message: error.message });
+        if (!controller.signal.aborted) setQuoteError({ key: quoteKey, message: rentalErrorMessage(error, promotionCode) });
       });
     }, 200);
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [cars, carIds, missingCars, loadError, startDate, expireDate, quoteKey, retry, validDates]);
+  }, [cars, carIds, missingCars, loadError, startDate, expireDate, deliveryMethod, promotionCode, quoteKey, retry, validDates]);
 
   function changeDates(event) {
     const { name, value } = event.target;
@@ -110,22 +121,50 @@ export default function RentalPage() {
     }
   }
 
+  function changeDelivery(event) {
+    const method = event.target.value;
+    setDeliveryMethod(method);
+    if (method === 'PICKUP') setDeliveryAddress('');
+    setSubmitError('');
+  }
+
+  function applyPromotion() {
+    const code = promotionDraft.trim().toUpperCase();
+    if (!code || creating) return;
+    setPromotionDraft(code);
+    setPromotionCode(code);
+    setSubmitError('');
+    if (code === promotionCode && currentQuoteError) setRetry(value => value + 1);
+  }
+
+  function removePromotion() {
+    setPromotionDraft('');
+    setPromotionCode('');
+    setSubmitError('');
+  }
+
   async function placeOrder(event) {
     event.preventDefault();
     if (!quote || !account || submittingRef.current) return;
+    if (deliveryMethod === 'DELIVERY' && !deliveryAddress.trim()) {
+      setSubmitError('Vui lòng nhập địa chỉ giao xe.');
+      return;
+    }
     submittingRef.current = true;
     setCreating(true);
     setSubmitError('');
     try {
-      const result = await createRental(carIds, startDate, expireDate);
+      const result = await createRental(cart);
       rememberRentalCart({ carIds: [], startDate, expireDate });
       window.location.replace(`/payment/${result.id}`);
     } catch (error) {
-      setSubmitError(error.message);
       if (error.status === 401) setAccount(null);
-      if (error.status === 409) {
+      const message = rentalErrorMessage(error, promotionCode);
+      if (error.status === 409 || error.status === 422) {
         setQuoteResult(null);
-        setQuoteError({ key: quoteKey, message: error.message });
+        setQuoteError({ key: quoteKey, message });
+      } else {
+        setSubmitError(message);
       }
       submittingRef.current = false;
       setCreating(false);
@@ -139,7 +178,7 @@ export default function RentalPage() {
         <Brand href="/" />
         <nav className="rental-header-links" aria-label="Điều hướng thuê xe">
           <a href={homeHref} className="account-back"><ArrowLeft size={16} aria-hidden="true" /> Trang chủ</a>
-          <a href="/account" className="button button-outline"><UserRound size={16} aria-hidden="true" /><span>{account ? 'Tài khoản' : 'Đăng nhập'}</span></a>
+          <a href="/account" className="button button-outline" title={account ? accountLabel(account) : undefined}><UserRound size={16} aria-hidden="true" /><span className="account-link-name">{accountLabel(account, 'Đăng nhập')}</span></a>
         </nav>
       </header>
       <main className="container rental-page" id="rental-main">
@@ -184,7 +223,7 @@ export default function RentalPage() {
                   <p className="rental-muted" role="status">Đang tải danh sách xe…</p>
                 ) : missingCars ? (
                   <div className="rental-empty">
-                    <p className="rental-error" role="alert">Một xe đã chọn không còn trong danh sách.</p>
+                    <p className="rental-error" role="alert">Một xe đã chọn đang được giữ hoặc không còn trong danh sách.</p>
                     <a className="button button-outline" href={homeHref}>Quay lại chọn xe</a>
                   </div>
                 ) : (
@@ -204,6 +243,47 @@ export default function RentalPage() {
                         </div>
                       </article>
                     ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="rental-panel" aria-labelledby="rental-delivery-title">
+                <h2 id="rental-delivery-title"><Truck size={21} aria-hidden="true" /> Hình thức nhận xe</h2>
+                <fieldset className="rental-delivery-options" aria-labelledby="rental-delivery-title" disabled={creating}>
+                  <label className="rental-delivery-option">
+                    <input type="radio" name="deliveryMethod" value="PICKUP" checked={deliveryMethod === 'PICKUP'} onChange={changeDelivery} />
+                    <span><strong>Tự đến nhận xe</strong><small>Miễn phí giao xe</small></span>
+                  </label>
+                  <label className="rental-delivery-option">
+                    <input type="radio" name="deliveryMethod" value="DELIVERY" checked={deliveryMethod === 'DELIVERY'} onChange={changeDelivery} />
+                    <span><strong>Giao tận nơi</strong><small>{quote && deliveryMethod === 'DELIVERY' ? `${formatPrice(quote.deliveryFee)} / đơn` : 'Phí giao tính theo đơn'}</small></span>
+                  </label>
+                  {deliveryMethod === 'DELIVERY' && (
+                    <label className="account-field rental-delivery-address">
+                      Địa chỉ giao xe
+                      <textarea name="deliveryAddress" value={deliveryAddress} maxLength={255} autoComplete="street-address"
+                        rows={2} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố"
+                        onChange={event => { setDeliveryAddress(event.target.value); setSubmitError(''); }} required />
+                    </label>
+                  )}
+                </fieldset>
+              </section>
+
+              <section className="rental-panel" aria-labelledby="rental-promotion-title">
+                <h2 id="rental-promotion-title"><Tag size={20} aria-hidden="true" /> Mã khuyến mãi</h2>
+                <div className="rental-promotion">
+                  <div className="account-field">
+                    <input name="promotionCode" aria-label="Nhập mã khuyến mãi" value={promotionDraft} maxLength={32} disabled={creating} placeholder="Nhập mã khuyến mãi"
+                      onChange={event => setPromotionDraft(event.target.value)}
+                      onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); applyPromotion(); } }} />
+                  </div>
+                  <button className="button button-outline" type="button" disabled={creating || !promotionDraft.trim()}
+                    onClick={applyPromotion}>Áp dụng</button>
+                </div>
+                {promotionCode && (
+                  <div className="rental-applied-promotion">
+                    <span role="status">{quote?.promotionCode ? `Đã áp dụng ${quote.promotionCode}` : promotionCode}</span>
+                    <button className="rental-text-button" type="button" disabled={creating} onClick={removePromotion}>Bỏ mã</button>
                   </div>
                 )}
               </section>
@@ -234,11 +314,11 @@ export default function RentalPage() {
                     {estimateDate && (
                       <div className="rental-estimate" aria-live="polite">
                         <p>{lateDays} ngày trễ × {formatPrice(quote.lateFeePerDay)} <strong>{formatPrice(lateEstimate)}</strong></p>
-                        <p>Tổng dự kiến <strong>{formatPrice(Number(quote.rentalSubtotal) + lateEstimate)}</strong></p>
+                        <p>Tổng dự kiến <strong>{formatPrice(Number(quote.totalPrice) + lateEstimate)}</strong></p>
                       </div>
                     )}
                   </details>
-                  <div className="rental-grand-total"><span>Tiền thuê theo lịch</span><strong>{formatPrice(quote.rentalSubtotal)}</strong></div>
+                  <RentalCostBreakdown pricing={quote} />
                 </>
               ) : (
                 <p className="rental-muted" role="status">{loadError || missingCars ? 'Cần kiểm tra lại danh sách xe đã chọn.' : validDates ? 'Đang lấy báo giá…' : 'Chọn ngày hợp lệ để xem chi phí.'}</p>

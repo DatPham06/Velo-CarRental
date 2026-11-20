@@ -18,7 +18,7 @@ export async function submitAccount(operation, data) {
     throw new Error('Tài khoản đã bị cấm. Vui lòng liên hệ quản trị viên.');
   }
   if (operation === 'register' && response.status === 409) {
-    throw new Error('Email này đã được đăng ký.');
+    throw new Error('Email hoặc CCCD đã được sử dụng.');
   }
   if (response.status === 400 || response.status === 422) {
     throw new Error('Thông tin chưa hợp lệ. Vui lòng kiểm tra và thử lại.');

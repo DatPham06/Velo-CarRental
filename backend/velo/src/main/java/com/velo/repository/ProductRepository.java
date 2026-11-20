@@ -10,6 +10,16 @@ import jakarta.persistence.LockModeType;
 import java.util.List;
 
 public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
+    @Query("""
+            select car from ProductEntity car
+            where not exists (
+                select detail.id from OrderDetailEntity detail
+                where detail.car.id = car.id and upper(detail.order.status) = 'PENDING'
+            )
+            order by car.id
+            """)
+    List<ProductEntity> findVisibleForRental();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select car from ProductEntity car where car.id in :ids order by car.id")
     List<ProductEntity> findAllForRental(@Param("ids") List<Long> ids);

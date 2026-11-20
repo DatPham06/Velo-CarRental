@@ -35,6 +35,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductEntity> findVisibleForRental() {
+        return productRepository.findVisibleForRental();
+    }
+
+    @Override
     public List<ProductEntity> findAllByBrand(String Brand) {
         return productRepository.findAllByBrand(Brand);
     }

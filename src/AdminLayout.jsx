@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { ArrowLeft, CarFront, ClipboardList, ShieldCheck, UserRound, Users } from 'lucide-react';
 import Brand from './Brand.jsx';
-import { useAccount } from './accountSession.js';
+import { useAccount, accountLabel } from './accountSession.js';
 import './admin.css';
 
 export function AdminNav({ active }) {
@@ -64,7 +64,7 @@ export default function AdminLayout({ active, title, description, children }) {
       <a className="skip-link" href="#admin-main">Đến nội dung chính</a>
       <header className="container header-content">
         <Brand href="/" />
-        <a className="button button-outline" href="/account"><UserRound size={17} aria-hidden="true" />Tài khoản</a>
+        <a className="button button-outline" href="/account" title={account ? accountLabel(account) : undefined}><UserRound size={17} aria-hidden="true" /><span className="account-link-name">{accountLabel(account)}</span></a>
       </header>
       <main className="container admin-page" id="admin-main">
         <a className="admin-back" href="/account"><ArrowLeft size={16} aria-hidden="true" />Về tài khoản của tôi</a>

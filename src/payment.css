@@ -13,9 +13,14 @@
 .payment-submit { margin-top: 21px; }
 .payment-submit:disabled { opacity: .55; cursor: default; }
 .payment-note { padding: 13px 15px; margin-top: 15px; border-radius: 13px; background: #f0f4e8; color: var(--pine); font-size: 13px; line-height: 1.7; }
-.payment-saved, .payment-dates, .payment-cars li { display: flex; align-items: center; gap: 10px; }
-.payment-saved { flex-wrap: wrap; justify-content: space-between; font-size: 14px; }
-.payment-saved span { padding: 6px 10px; border-radius: 99px; background: #ebefdf; color: var(--pine); font-size: 12px; }
+.payment-dates, .payment-cars li { display: flex; align-items: center; gap: 10px; }
+.payment-saved { padding: 16px; border: 1px solid #dce7d2; border-radius: 15px; background: #f0f5e9; }
+.payment-saved h2 { margin-bottom: 6px; color: var(--pine); }
+.payment-saved p { color: var(--muted); font-size: 13px; }
+.payment-saved strong { margin-left: 4px; color: var(--ink); }
+.payment-delivery { display: flex; align-items: start; gap: 8px; padding: 11px 0; border-block: 1px solid var(--line); color: var(--pine); font-size: 13px; }
+.payment-delivery svg { flex: none; }
+.payment-delivery p { margin-top: 4px; color: var(--muted); overflow-wrap: anywhere; }
 .payment-transfer { margin-top: 17px; padding: 16px; background: #f3f6ec; border-radius: 14px; }
 .payment-transfer h3 { font-size: 16px; }
 .payment-transfer dl { margin: 10px 0 0; }

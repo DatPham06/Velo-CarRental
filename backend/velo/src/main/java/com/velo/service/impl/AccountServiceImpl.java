@@ -3,6 +3,7 @@ package com.velo.service.impl;
 import com.velo.entity.user.AccountEntity;
 import com.velo.repository.AccountRepository;
 import com.velo.service.AccountService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +26,26 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountEntity register(AccountEntity registration) {
-        return accountRepository.save(registration);
+        String cccd = registration.getCccd();
+        if (cccd == null || !cccd.strip().matches("[0-9]{12}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CCCD phải có đúng 12 chữ số.");
+        }
+        registration.setCccd(cccd.strip());
+        if (accountAlreadyExists(registration)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email hoặc CCCD đã được sử dụng.");
+        }
+        try {
+            return accountRepository.save(registration);
+        } catch (DataIntegrityViolationException exception) {
+            if (accountAlreadyExists(registration)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email hoặc CCCD đã được sử dụng.");
+            }
+            throw exception;
+        }
+    }
+
+    private boolean accountAlreadyExists(AccountEntity registration) {
+        return accountRepository.existsByEmail(registration.getEmail()) || accountRepository.existsByCccd(registration.getCccd());
     }
 
     @Override

@@ -4,6 +4,7 @@ package com.velo.service;
 import com.velo.entity.OrderEntity;
 import com.velo.entity.PaymentEntity;
 import com.velo.dto.response.order.RentalQuote;
+import com.velo.dto.response.order.CartQuote;
 import com.velo.dto.response.order.OrderSummary;
 import com.velo.dto.response.order.PaymentCheckout;
 import com.velo.entity.user.AccountEntity;
@@ -13,6 +14,8 @@ import java.util.List;
 
 public interface OrderService {
     RentalQuote quote(Long carId, LocalDate startDate, LocalDate expireDate);
+    CartQuote quoteCart(List<Long> carIds, LocalDate startDate, LocalDate expireDate,
+                        String deliveryMethod, String promotionCode);
     OrderEntity createOrder(OrderEntity orderEntity, AccountEntity account);
     List<OrderEntity> findAllByOrderByOrderIdDesc();
     OrderSummary.Page listOrders(Long accountId, String status, int page);

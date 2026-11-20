@@ -24,6 +24,11 @@ public class ProductController {
     public List<ProductEntity> getAllProduct() {
         return productService.findAllProduct();
     }
+
+    @GetMapping("/rentable")
+    public List<ProductEntity> getRentableCars() {
+        return productService.findVisibleForRental();
+    }
     @GetMapping("/getbybrand/{brand}")
     public List<ProductEntity> getAllByBrand(@PathVariable("brand") String brand) {
         return productService.findAllByBrand(brand);

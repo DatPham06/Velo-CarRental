@@ -4,6 +4,7 @@ import com.velo.entity.OrderEntity;
 import com.velo.entity.PaymentEntity;
 import com.velo.service.OrderService;
 import com.velo.service.AccountSession;
+import com.velo.dto.response.order.CartQuote;
 import com.velo.dto.response.order.OrderSummary;
 import com.velo.dto.response.order.PaymentCheckout;
 import com.velo.dto.response.order.RentalQuote;
@@ -31,6 +32,16 @@ public class OrderController {
                              @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                              @RequestParam("expireDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expireDate) {
         return orderService.quote(carId, startDate, expireDate);
+    }
+
+    @GetMapping("/cart-quote")
+    public CartQuote cartQuote(
+            @RequestParam("carIds") List<Long> carIds,
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("expireDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expireDate,
+            @RequestParam(name = "deliveryMethod", defaultValue = "PICKUP") String deliveryMethod,
+            @RequestParam(name = "promotionCode", required = false) String promotionCode) {
+        return orderService.quoteCart(carIds, startDate, expireDate, deliveryMethod, promotionCode);
     }
 
     @PostMapping("/create")

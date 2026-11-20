@@ -25,6 +25,10 @@ export function useAccount() {
   return { account, setAccount, loading, error, retry: () => setRevision(value => value + 1) };
 }
 
+export function accountLabel(account, guestLabel = 'Tài khoản') {
+  return account?.fullName?.trim() || account?.userName?.trim() || account?.email || guestLabel;
+}
+
 export function roleLabel(role) {
   if (role === 'ADMIN') return 'Quản trị viên';
   if (role === 'USER') return 'Người dùng';

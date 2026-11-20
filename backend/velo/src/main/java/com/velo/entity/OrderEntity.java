@@ -40,6 +40,23 @@ public class OrderEntity {
     @Column(name = "TotalPrice", nullable = false)
     private BigDecimal totalPrice;
 
+    @Column(name = "delivery_method", length = 12)
+    private String deliveryMethod;
+
+    @Column(name = "delivery_address", length = 255)
+    private String deliveryAddress;
+
+    @Column(name = "delivery_fee", precision = 38, scale = 2)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal deliveryFee;
+
+    @Column(name = "promotion_code", length = 32)
+    private String promotionCode;
+
+    @Column(name = "discount_amount", precision = 38, scale = 2)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private BigDecimal discountAmount;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "account_id", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -133,5 +150,45 @@ public class OrderEntity {
 
     public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public String getDeliveryMethod() {
+        return deliveryMethod;
+    }
+
+    public void setDeliveryMethod(String deliveryMethod) {
+        this.deliveryMethod = deliveryMethod;
+    }
+
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public void setDeliveryAddress(String deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
+    }
+
+    public BigDecimal getDeliveryFee() {
+        return deliveryFee;
+    }
+
+    public void setDeliveryFee(BigDecimal deliveryFee) {
+        this.deliveryFee = deliveryFee;
+    }
+
+    public String getPromotionCode() {
+        return promotionCode;
+    }
+
+    public void setPromotionCode(String promotionCode) {
+        this.promotionCode = promotionCode;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
     }
 }
