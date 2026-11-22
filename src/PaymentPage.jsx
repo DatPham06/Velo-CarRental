@@ -144,9 +144,9 @@ export default function PaymentPage({ orderId }) {
                         </label>
                       ))}
                     </fieldset>
-                    {method === 'BANK_TRANSFER' && <p className="payment-note">{checkout.bank
-                      ? 'Xác nhận để xem tài khoản nhận và nội dung chuyển khoản của đơn này.'
-                      : 'Tài khoản nhận tiền chưa được công bố. Bạn có thể lưu lựa chọn và liên hệ Velo để lấy thông tin chuyển khoản.'}</p>}
+                    {method === 'BANK_TRANSFER' && checkout.bank && (
+                      <p className="payment-note">Xác nhận để xem tài khoản nhận và nội dung chuyển khoản của đơn này.</p>
+                    )}
                     {saveError && <p className="rental-error" role="alert">{saveError}</p>}
                     <button className="button button-primary payment-submit" type="submit" disabled={!method || busy}>
                       {busy ? 'Đang ghi nhận…' : 'Thanh toán'} <ArrowRight size={16} aria-hidden="true" />
