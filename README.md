@@ -22,7 +22,7 @@ Mở `http://localhost:5173/account` hoặc chọn **Tài khoản** trên trang 
 | `USER` | `user.demo@velo.test` | `User@123456` |
 | `ADMIN` | `admin.demo@velo.test` | `Admin@123456` |
 
-Khi phục vụ bản build bằng Nginx, cấu hình fallback về `index.html` cho các trang `/account`, `/rent`, `/payment/{id}`, `/orders`, `/admin/orders`, `/admin/cars`, `/admin/accounts` và chuyển tiếp `/api/account/...`, `/api/product/...`, `/api/order/...` đến Spring Boot sau khi bỏ tiền tố `/api`. Giữ frontend và API cùng origin (cùng giao thức, tên máy và cổng trên trình duyệt) để dùng cookie phiên đăng nhập.
+Khi phục vụ bản build bằng Nginx, cấu hình fallback về `index.html` cho các trang `/account`, `/rent`, `/payment/{id}`, `/orders`, `/admin/orders`, `/admin/cars`, `/admin/accounts`, `/admin/statistics` và chuyển tiếp `/api/account/...`, `/api/product/...`, `/api/order/...` đến Spring Boot sau khi bỏ tiền tố `/api`. Giữ frontend và API cùng origin (cùng giao thức, tên máy và cổng trên trình duyệt) để dùng cookie phiên đăng nhập.
 
 ## Thuê xe
 
@@ -64,7 +64,7 @@ Frontend gửi `POST /order/{id}/updatestatus?newStatus=...&expectedStatus=...`.
 
 ## Quản lý xe và tài khoản
 
-Trang tài khoản admin có ba mục **Quản lý đơn thuê**, **Quản lý xe** và **Quản lý tài khoản**. Mục lịch sử thuê và thuê xe dành cho tài khoản `USER`.
+Trang tài khoản admin có các mục **Thống kê**, **Quản lý đơn thuê**, **Quản lý xe** và **Quản lý tài khoản**. Mục lịch sử thuê và thuê xe dành cho tài khoản `USER`.
 
 `/admin/cars` hỗ trợ tìm xe, thêm, sửa tên xe, hãng, giá thuê mỗi ngày, đường dẫn ảnh và xóa xe chưa có đơn thuê. Các API `POST /product/create`, `POST /product/{id}/update`, `POST /product/{id}/delete` yêu cầu phiên admin. Xe đã được dùng trong đơn thuê không thể xóa và trả HTTP `409` để giữ lịch sử; giá đã lưu trên đơn không đổi khi sửa giá xe.
 
@@ -73,3 +73,13 @@ Trang tài khoản admin có ba mục **Quản lý đơn thuê**, **Quản lý x
 Khởi động lại backend sau khi cập nhật code. Khi dùng `ddl-auto: update`, backend tự thêm cột `account.banned` với giá trị mặc định `false` cho tài khoản hiện có. Nếu chạy với `ddl-auto: validate`, cần thêm cột `banned BOOLEAN NOT NULL DEFAULT FALSE` vào bảng `account` trước khi khởi động.
 
 File `scripts/smoke-admin.mjs` kiểm tra quyền admin, CRUD xe, giữ lịch sử thuê, cấm/bỏ cấm và chặn phiên cũ. Chỉ chạy với backend dùng database test riêng đã có hai tài khoản demo, bằng biến môi trường `VELO_TEST_BASE_URL` và lệnh `node scripts/smoke-admin.mjs`.
+
+## Thống kê admin
+
+Admin chọn **Thống kê** trong trang tài khoản hoặc thanh quản trị để mở `/admin/statistics`. Trang có bộ lọc năm từ 2000 đến 2100, biểu đồ 12 tháng (đổi giữa số đơn và giá trị đơn), chi tiết khi chọn cột, bảng số liệu tháng, phân bổ trạng thái, thanh toán và top 5 xe được đặt nhiều nhất. Số lượng tài khoản, tài khoản bị cấm, xe và xe đang được thuê là tổng hiện tại của toàn hệ thống, không bị lọc theo năm.
+
+API `GET /order/statistics?year=2026` chỉ dành cho phiên admin; bỏ `year` để lấy năm hiện tại theo múi giờ Việt Nam. Đơn được nhóm theo **ngày nhận xe**, gồm cả đơn hủy trong số đếm. Giá trị đơn và top xe bỏ trạng thái `CANCELLED`/`CANCELED`; `COMPLETED` được tính chung với `RETURNED` khi thống kê trạng thái. Một đơn có nhiều xe vẫn chỉ cộng tiền một lần.
+
+Giá trị đơn dùng `orders.total_price` đã lưu (gồm phí giao xe, trừ khuyến mãi, chưa có phí trả trễ). Giá trị đơn đã xác nhận thanh toán chỉ lấy các đơn có `payment.status = PAID`; thanh toán `PENDING` không được coi là đã thu tiền. Đây là số liệu theo năm nhận xe, không phải báo cáo theo ngày thu tiền vì database chưa lưu ngày đó.
+
+`scripts/smoke-statistics.mjs` kiểm tra quyền truy cập, tiền đơn nhiều xe, đơn hủy, trạng thái cũ, top xe, ranh giới năm và dữ liệu rỗng. Chạy với `VELO_TEST_BASE_URL` trỏ tới backend test riêng đã nạp `backend/velo/src/test/resources/statistics-fixture.sql`. File fixture chỉ dùng cho database test trống, không nạp vào database thật.

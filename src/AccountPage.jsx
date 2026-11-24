@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, CarFront, ChevronRight, ClipboardList, Eye,
+  ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, CarFront, ChevronRight, ClipboardList, Eye,
   EyeOff, LogOut, Mail, MapPin, Phone, UserRound, Users,
 } from 'lucide-react';
 import Brand from './Brand.jsx';
@@ -16,6 +16,7 @@ function AccountProfile({ account, headingRef, busy, error, onLogout }) {
   const initials = (names.length > 1 ? [names[0], names.at(-1)] : names)
     .map((part) => [...part][0]).join('').toLocaleUpperCase('vi-VN');
   const links = account.role === 'ADMIN' ? [
+    { href: '/admin/statistics', label: 'Thống kê', icon: BarChart3 },
     { href: '/admin/orders', label: 'Quản lý đơn thuê', icon: ClipboardList },
     { href: '/admin/cars', label: 'Quản lý xe', icon: CarFront },
     { href: '/admin/accounts', label: 'Quản lý tài khoản', icon: Users },
@@ -135,7 +136,7 @@ export default function AccountPage() {
         setFeedback({ type: 'success', text: 'Đã tạo tài khoản. Đăng nhập để tiếp tục.' });
       } else {
         setAccount(result);
-        if (['/orders', '/admin/orders', '/admin/cars', '/admin/accounts', '/rent'].includes(next) || /^\/payment\/[1-9]\d*$/.test(next)) {
+        if (['/orders', '/admin/orders', '/admin/cars', '/admin/accounts', '/admin/statistics', '/rent'].includes(next) || /^\/payment\/[1-9]\d*$/.test(next)) {
           window.location.assign(next);
         }
       }

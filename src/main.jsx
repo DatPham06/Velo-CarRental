@@ -15,6 +15,7 @@ import OrdersPage from './OrdersPage.jsx';
 import PaymentPage from './PaymentPage.jsx';
 import AdminCarsPage from './AdminCarsPage.jsx';
 import AdminAccountsPage from './AdminAccountsPage.jsx';
+import AdminStatisticsPage from './AdminStatisticsPage.jsx';
 import { useAccount, accountLabel } from './accountSession.js';
 import Brand from './Brand.jsx';
 import CarImage from './CarImage.jsx';
@@ -303,6 +304,7 @@ if (/^\/orders\/?$/.test(window.location.pathname)) page = <OrdersPage />;
 if (/^\/admin\/orders\/?$/.test(window.location.pathname)) page = <OrdersPage admin />;
 if (/^\/admin\/cars\/?$/.test(window.location.pathname)) page = <AdminCarsPage />;
 if (/^\/admin\/accounts\/?$/.test(window.location.pathname)) page = <AdminAccountsPage />;
+if (/^\/admin\/statistics\/?$/.test(window.location.pathname)) page = <AdminStatisticsPage />;
 window.addEventListener('pageshow', event => {
   if (event.persisted) window.location.reload();
 });

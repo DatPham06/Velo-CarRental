@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
-import { ArrowLeft, CarFront, ClipboardList, ShieldCheck, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, BarChart3, CarFront, ClipboardList, ShieldCheck, UserRound, Users } from 'lucide-react';
 import Brand from './Brand.jsx';
 import { useAccount, accountLabel } from './accountSession.js';
 import './admin.css';
@@ -8,6 +8,7 @@ export function AdminNav({ active }) {
   return (
     <nav className="admin-nav" aria-label="Quản trị">
       {[
+        ['statistics', '/admin/statistics', BarChart3, 'Thống kê'],
         ['orders', '/admin/orders', ClipboardList, 'Quản lý đơn thuê'],
         ['cars', '/admin/cars', CarFront, 'Quản lý xe'],
         ['accounts', '/admin/accounts', Users, 'Quản lý tài khoản'],
